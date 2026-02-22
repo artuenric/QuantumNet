@@ -4,19 +4,19 @@ class Epr():
         self._epr_id = epr_id
         self._initial_fidelity = initial_fidelity if initial_fidelity is not None else random.uniform(0, 1)
         self._current_fidelity = self._initial_fidelity
-        # Ainda vamos ver se isso vai ser necessário
+        # Still need to check if this will be necessary
         # self.qubits = qubits
-    
+
     @property
     def epr_id(self):
         return self._epr_id
-    
+
     def get_initial_fidelity(self):
         return self._initial_fidelity
-    
+
     def get_current_fidelity(self):
         return self._current_fidelity
-    
+
     def set_fidelity(self, new_fidelity: float):
-        """Define a nova fidelidade do par EPR."""
+        """Set the new fidelity of the EPR pair."""
         self._current_fidelity = new_fidelity

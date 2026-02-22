@@ -13,7 +13,7 @@ class Logger(object):
                 self.logger.setLevel(logging.DEBUG)
                 Logger.__instance = self
             else:
-                raise Exception('Esta é uma classe singleton')
+                raise Exception('This is a singleton class')
 
     def get_instance():
         if Logger.__instance is None:
@@ -22,7 +22,7 @@ class Logger(object):
 
     def activate(self):
         Logger.DISABLED = False
-    
+
     def warn(self, message):
         if not Logger.DISABLED:
             self.logger.warning(message)

@@ -1,115 +1,116 @@
 
-from ..objects import Logger, Qubit
+from ..utils import Logger
+from ..quantum import Qubit
 
 class Host():
     def __init__(self, host_id: int) -> None:
-        # Sobre a rede
+        # Network information
         self._host_id = host_id
         self._connections = []
-        # Sobre o host
+        # Host information
         self._memory = []
         self._routing_table = {}
         self._routing_table[host_id] = [host_id]
-        # Sobre a execução
+        # Execution information
         self.logger = Logger.get_instance()
     def __str__(self):
         return f'{self.host_id}'
-    
+
     @property
     def host_id(self):
         """
-        ID do host. Sempre um inteiro.
+        Host ID. Always an integer.
 
         Returns:
-            int : Nome do host.
+            int: Host name.
         """
         return self._host_id
-    
+
     @property
     def connections(self):
         """
-        Conexões do host.
+        Host connections.
 
         Returns:
-            list : Lista de conexões.
+            list: List of connections.
         """
         return self._connections
-    
+
     @property
     def memory(self):
         """
-        Memória do host.
+        Host memory.
 
         Returns:
-            list : Lista de qubits.
+            list: List of qubits.
         """
         return self._memory
-    
+
     @property
     def routing_table(self):
         """
-        Tabela de roteamento do host.
+        Host routing table.
         Returns:
-            dict : Tabela de roteamento.
+            dict: Routing table.
         """
         return self._routing_table
-    
-    
+
+
     def get_last_qubit(self):
         """
-        Retorna o último qubit da memória.
+        Return the last qubit from memory.
 
         Returns:
-            Qubit : Último qubit da memória.
+            Qubit: Last qubit from memory.
         """
         try:
             q = self.memory[-1]
             self.memory.remove(q)
             return q
         except IndexError:
-            raise Exception('Não há mais qubits na memória.')
-    
+            raise Exception('No more qubits in memory.')
+
     def add_connection(self, host_id_for_connection: int):
         """
-        Adiciona uma conexão ao host. Uma conexão é um host_id, um número inteiro.
+        Add a connection to the host. A connection is a host_id, an integer.
 
         Args:
-            host_id_for_connection (int): Host ID do host que será conectado.
+            host_id_for_connection (int): Host ID of the host to be connected.
         """
-        
+
         if type(host_id_for_connection) != int:
-            raise Exception('O valor fornecido para host_id_for_connection deve ser um inteiro.')
-        
+            raise Exception('Value provided for host_id_for_connection must be an integer.')
+
         if host_id_for_connection not in self.connections:
             self.connections.append(host_id_for_connection)
 
     def add_qubit(self, qubit: Qubit):
         """
-        Adiciona um qubit à memória do host.
+        Add a qubit to the host memory.
 
         Args:
-            qubit (Qubit): O qubit a ser adicionado.
+            qubit (Qubit): The qubit to be added.
         """
-        
+
         self.memory.append(qubit)
-        Logger.get_instance().debug(f'Qubit {qubit.qubit_id} adicionado à memória do Host {self.host_id}.')
+        Logger.get_instance().debug(f'Qubit {qubit.qubit_id} added to memory of Host {self.host_id}.')
 
 
 
     def set_routing_table(self, routing_table: dict):
         """
-        Define a tabela de roteamento do host.
+        Set the host routing table.
         Args:
-            routing_table (dict): Tabela de roteamento.
+            routing_table (dict): Routing table.
         """
 
         self._routing_table = routing_table
 
     def info(self):
         """
-        Retorna informações sobre o host.
+        Return information about the host.
         Returns:
-            dict : Informações sobre o host.
+            dict: Host information.
         """
 
         return {
@@ -120,7 +121,7 @@ class Host():
 
     def announce_to_controller_app_has_finished(self):
         """
-        Informa ao controlador que a aplicação terminou.
+        Inform the controller that the application has finished.
         """
 
-        Logger.get_instance().log(f'Host {self.host_id} informou ao controlador que a aplicação terminou.')
+        Logger.get_instance().log(f'Host {self.host_id} informed controller that application has finished.')

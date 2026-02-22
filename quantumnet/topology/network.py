@@ -1,279 +1,281 @@
 import networkx as nx
-from ..objects import Logger, Qubit, Clock
+from ..utils import Logger
+from ..quantum import Qubit
+from ..runtime import Clock
 from ..config import SimulationConfig
-from ..components import Host
-from .network_context import NetworkContext
-from .layers import *
+from .host import Host
+from ..control.network_context import NetworkContext
+from ..layers import *
 import random
 import os
 import csv
 
 class Network():
     """
-    Um objeto para utilizar como rede.
+    An object to use as a network.
     """
     def __init__(self, clock: 'Clock' = None, config: 'SimulationConfig' = None) -> None:
-        # Configuração da simulação
+        # Simulation configuration
         self.config = config if config is not None else SimulationConfig()
-        # Relógio da simulação
+        # Simulation clock
         self.clock = clock if clock is not None else Clock()
-        # Sobre a rede
+        # Network
         self._graph = nx.Graph()
         self._hosts = {}
-        # Sobre a execução
+        # Execution
         self.logger = Logger.get_instance()
-        self.qubit_timeslots = {}  # Dicionário para armazenar qubits criados e seus timeslots
-        # Contexto compartilhado entre as camadas (sem referência ao Network)
+        self.qubit_timeslots = {}  # Dictionary to store created qubits and their timeslots
+        # Shared context between layers (without Network reference)
         self._context = NetworkContext(self.clock, self._graph, self._hosts, self.qubit_timeslots, self.config)
-        # Camadas
+        # Layers
         self._physical = PhysicalLayer(self._context)
         self._link = LinkLayer(self._context, self._physical)
         self._network = NetworkLayer(self._context, self._physical)
         self._transport = TransportLayer(self._context, self._network, self._physical)
         self._application = ApplicationLayer(self._context, self._transport)
-        # Registra decoerência como callback de tick
+        # Register decoherence as tick callback
         self.clock.on_tick(self._decoherence_on_tick)
 
     @property
     def hosts(self):
         """
-        Dicionário com os hosts da rede. No padrão {host_id: host}.
+        Dictionary of network hosts. Format: {host_id: host}.
 
         Returns:
-            dict : Dicionário com os hosts da rede.
+            dict: Dictionary of network hosts.
         """
         return self._hosts
-    
+
     @property
     def graph(self):
         """
-        Grafo da rede.
+        Network graph.
 
         Returns:
-            nx.Graph : Grafo da rede.
+            nx.Graph: Network graph.
         """
         return self._graph
-    
+
     @property
     def nodes(self):
         """
-        Nós do grafo da rede.
+        Network graph nodes.
 
         Returns:
-            list : Lista de nós do grafo.
+            list: List of graph nodes.
         """
         return self._graph.nodes()
-    
+
     @property
     def edges(self):
         """
-        Arestas do grafo da rede.
+        Network graph edges.
 
         Returns:
-            list : Lista de arestas do grafo.
+            list: List of graph edges.
         """
         return self._graph.edges()
-    
-    # Camadas
+
+    # Layers
     @property
     def physical(self):
         """
-        Camada física da rede.
+        Network physical layer.
 
         Returns:
-            PhysicalLayer : Camada física da rede.
+            PhysicalLayer: Network physical layer.
         """
         return self._physical
-    
+
     @property
     def linklayer(self):
         """
-        Camada de enlace da rede.
+        Network link layer.
 
         Returns:
-            LinkLayer : Camada de enlace da rede.
+            LinkLayer: Network link layer.
         """
         return self._link
-    
-    @property 
+
+    @property
     def networklayer(self):
         """
-        Camada de rede da rede.
+        Network layer.
 
         Returns:
-            NetworkLayer : Camada de rede da rede.
+            NetworkLayer: Network layer.
         """
         return self._network
-    
-    @property   
+
+    @property
     def transportlayer(self):
         """
-        Camada de transporte de transporte.
+        Transport layer.
 
         Returns:
-            TransportLayer : Camada de transporte de transporte.
+            TransportLayer: Transport layer.
         """
         return self._transport
-    
+
     @property
     def application_layer(self):
         """
-        Camada de transporte de aplicação.
+        Application layer.
 
         Returns:
-            ApplicationLayer : Camada de aplicação.
+            ApplicationLayer: Application layer.
         """
         return self._application
 
     def draw(self):
         """
-        Desenha a rede.
+        Draw the network.
         """
         nx.draw(self._graph, with_labels=True)
-    
+
     def add_host(self, host: Host):
         """
-        Adiciona um host à rede no dicionário de hosts, e o host_id ao grafo da rede.
-            
+        Add a host to the network hosts dictionary and the host_id to the network graph.
+
         Args:
-            host (Host): O host a ser adicionado.
+            host (Host): The host to be added.
         """
-        # Adiciona o host ao dicionário de hosts, se não existir
-        if host.host_id not in self._hosts:        
+        # Add host to hosts dictionary if it doesn't exist
+        if host.host_id not in self._hosts:
             self._hosts[host.host_id] = host
-            Logger.get_instance().debug(f'Host {host.host_id} adicionado aos hosts da rede.')
+            Logger.get_instance().debug(f'Host {host.host_id} added to network hosts.')
         else:
-            raise Exception(f'Host {host.host_id} já existe nos hosts da rede.')
-            
-        # Adiciona o nó ao grafo da rede, se não existir
+            raise Exception(f'Host {host.host_id} already exists in network hosts.')
+
+        # Add node to network graph if it doesn't exist
         if not self._graph.has_node(host.host_id):
             self._graph.add_node(host.host_id)
-            Logger.get_instance().debug(f'Nó {host.host_id} adicionado ao grafo da rede.')
-            
-        # Adiciona as conexões do nó ao grafo da rede, se não existirem
+            Logger.get_instance().debug(f'Node {host.host_id} added to network graph.')
+
+        # Add node connections to network graph if they don't exist
         for connection in host.connections:
             if not self._graph.has_edge(host.host_id, connection):
                 self._graph.add_edge(host.host_id, connection)
-                Logger.get_instance().debug(f'Conexões do {host.host_id} adicionados ao grafo da rede.')
-    
+                Logger.get_instance().debug(f'Connections of {host.host_id} added to network graph.')
+
     def get_host(self, host_id: int) -> Host:
         """
-        Retorna um host da rede.
+        Return a host from the network.
 
         Args:
-            host_id (int): ID do host a ser retornado.
+            host_id (int): ID of the host to be returned.
 
         Returns:
-            Host : O host com o host_id fornecido.
+            Host: The host with the given host_id.
         """
         return self._context.get_host(host_id)
 
     def get_eprs(self):
         """
-        Cria uma lista de qubits entrelaçados (EPRs) associadas a cada aresta do grafo.
+        Create a list of entangled qubits (EPRs) associated with each graph edge.
 
         Returns:
-            Um dicionários que armazena as chaves que são as arestas do grafo e os valores são as
-              listas de qubits entrelaçados (EPRs) associadas a cada aresta. 
+            dict: Dictionary where keys are graph edges and values are
+              lists of entangled qubits (EPRs) associated with each edge.
         """
         eprs = {}
         for edge in self.edges:
             eprs[edge] = self._graph.edges[edge]['eprs']
         return eprs
-    
+
     def get_eprs_from_edge(self, alice: int, bob: int) -> list:
         """
-        Retorna os EPRs de uma aresta específica.
+        Return the EPRs from a specific edge.
 
         Args:
-            alice (int): ID do host Alice.
-            bob (int): ID do host Bob.
+            alice (int): Alice host ID.
+            bob (int): Bob host ID.
         Returns:
-            list : Lista de EPRs da aresta.
+            list: List of EPRs from the edge.
         """
         return self._context.get_eprs_from_edge(alice, bob)
-    
+
     def remove_epr(self, alice: int, bob: int) -> list:
         """
-        Remove um EPR de um canal.
+        Remove an EPR from a channel.
 
         Args:
-            channel (tuple): Canal de comunicação.
+            channel (tuple): Communication channel.
         """
         channel = (alice, bob)
         try:
-            epr = self._graph.edges[channel]['eprs'].pop(-1)   
+            epr = self._graph.edges[channel]['eprs'].pop(-1)
             return epr
         except IndexError:
-            raise Exception('Não há Pares EPRs.')   
-        
+            raise Exception('No EPR pairs available.')
+
     def set_ready_topology(self, topology_name: str, *args: int) -> str:
         """
-        Cria um grafo com uma das topologias prontas para serem utilizadas. 
-        São elas: Grade, Linha, Anel. Os nós são numerados de 0 a n-1, onde n é o número de nós.
+        Create a graph with one of the ready-to-use topologies.
+        Available: Grid, Line, Ring. Nodes are numbered from 0 to n-1, where n is the number of nodes.
 
-        Args: 
-            topology_name (str): Nome da topologia a ser utilizada.
-            **args (int): Argumentos para a topologia. Geralmente, o número de hosts.
-        
+        Args:
+            topology_name (str): Name of the topology to use.
+            **args (int): Arguments for the topology. Usually the number of hosts.
+
         """
-        # Cria o grafo da topologia escolhida
+        # Create the graph for the chosen topology
         if topology_name == 'Grade':
             if len(args) != 2:
-                raise Exception('Para a topologia Grade, são necessários dois argumentos.')
+                raise Exception('Grid topology requires two arguments.')
             self._graph = nx.grid_2d_graph(*args)
         elif topology_name == 'Linha':
             if len(args) != 1:
-                raise Exception('Para a topologia Linha, é necessário um argumento.')
+                raise Exception('Line topology requires one argument.')
             self._graph = nx.path_graph(*args)
         elif topology_name == 'Anel':
             if len(args) != 1:
-                raise Exception('Para a topologia Anel, é necessário um argumento.')
+                raise Exception('Ring topology requires one argument.')
             self._graph = nx.cycle_graph(*args)
 
-        # Converte os labels dos nós para inteiros
+        # Convert node labels to integers
         self._graph = nx.convert_node_labels_to_integers(self._graph)
-        # Atualiza a referência no contexto compartilhado
+        # Update reference in shared context
         self._context.graph = self._graph
 
-        # Cria os hosts e adiciona ao dicionário de hosts
+        # Create hosts and add to hosts dictionary
         for node in self._graph.nodes():
             self._hosts[node] = Host(node)
         self.start_hosts()
         self.start_channels()
         self.start_eprs()
-    
+
     def start_hosts(self, num_qubits: int = None):
         """
-        Inicializa os hosts da rede.
+        Initialize network hosts.
 
         Args:
-            num_qubits (int): Número de qubits a serem inicializados. Se None, usa config.
+            num_qubits (int): Number of qubits to initialize. If None, uses config.
         """
         if num_qubits is None:
             num_qubits = self.config.defaults.qubits_per_host
         for host_id in self._hosts:
             for i in range(num_qubits):
                 self.physical.create_qubit(host_id, increment_qubits=False)
-        self.logger.debug("Hosts inicializados")
+        self.logger.debug("Hosts initialized")
 
     def start_channels(self):
         """
-        Inicializa os canais da rede.
+        Initialize network channels.
         """
         prob_cfg = self.config.probability
         for edge in self.edges:
             self._graph.edges[edge]['prob_on_demand_epr_create'] = random.uniform(prob_cfg.epr_create_min, prob_cfg.epr_create_max)
             self._graph.edges[edge]['prob_replay_epr_create'] = random.uniform(prob_cfg.epr_create_min, prob_cfg.epr_create_max)
             self._graph.edges[edge]['eprs'] = list()
-        self.logger.debug("Canais inicializados")
-        
+        self.logger.debug("Channels initialized")
+
     def start_eprs(self, num_eprs: int = None):
         """
-        Inicializa os pares EPRs nas arestas da rede.
+        Initialize EPR pairs on network edges.
 
         Args:
-            num_eprs (int): Número de pares EPR a serem inicializados para cada canal. Se None, usa config.
+            num_eprs (int): Number of EPR pairs to initialize per channel. If None, uses config.
         """
         if num_eprs is None:
             num_eprs = self.config.defaults.eprs_per_channel
@@ -281,105 +283,105 @@ class Network():
             for i in range(num_eprs):
                 epr = self.physical.create_epr_pair(increment_eprs=False)
                 self._graph.edges[edge]['eprs'].append(epr)
-                self.logger.debug(f'Par EPR {epr} adicionado ao canal.')
-        self.logger.debug("Pares EPRs adicionados")
+                self.logger.debug(f'EPR pair {epr} added to channel.')
+        self.logger.debug("EPR pairs added")
 
-        
+
     def get_timeslot(self):
         """
-        Retorna o timeslot atual da rede.
-        Wrapper de compatibilidade; prefira usar self.clock.now diretamente.
+        Return the current network timeslot.
+        Compatibility wrapper; prefer using self.clock.now directly.
 
         Returns:
-            int : Timeslot atual da rede.
+            int: Current network timeslot.
         """
         return self.clock.now
 
     def register_qubit_creation(self, qubit_id, layer_name):
         """
-        Registra a criação de um qubit no timeslot atual do clock.
+        Register the creation of a qubit at the current clock timeslot.
 
         Args:
-            qubit_id (int): ID do qubit criado.
-            layer_name (str): Nome da camada que criou o qubit.
+            qubit_id (int): ID of the created qubit.
+            layer_name (str): Name of the layer that created the qubit.
         """
         self._context.register_qubit_creation(qubit_id, layer_name)
-        
+
     def display_all_qubit_timeslots(self):
         """
-        Exibe o timeslot de todos os qubits criados nas diferentes camadas da rede.
-        Se nenhum qubit foi criado, exibe uma mensagem apropriada.
+        Display the timeslot of all qubits created across different network layers.
+        If no qubit was created, displays an appropriate message.
         """
         if not self.qubit_timeslots:
-            self.logger.log("Nenhum qubit foi criado.")
+            self.logger.log("No qubits were created.")
         else:
             for qubit_id, info in self.qubit_timeslots.items():
-                self.logger.log(f"Qubit {qubit_id} foi criado no timeslot {info['timeslot']} na camada {info['layer']}")
-                
-                
-    def get_total_useds_eprs(self):
+                self.logger.log(f"Qubit {qubit_id} was created at timeslot {info['timeslot']} in layer {info['layer']}")
+
+
+    def get_total_used_eprs(self):
         """
-        Retorna o número total de EPRs (pares entrelaçados) utilizados na rede.
+        Return the total number of EPRs (entangled pairs) used in the network.
 
         Returns:
-            int: Total de EPRs usados nas camadas física, de enlace e de rede.
+            int: Total EPRs used across physical, link and network layers.
         """
         total_eprs = (self._physical.get_used_eprs()+
                       self._link.get_used_eprs() +
                       self._network.get_used_eprs()
         )
         return total_eprs
-    
-    def get_total_useds_qubits(self):
+
+    def get_total_used_qubits(self):
         """
-        Retorna o número total de qubits utilizados em toda a rede.
+        Return the total number of qubits used across the entire network.
 
         Returns:
-            int: Total de qubits usados nas camadas física, de enlace, transporte e aplicação.
+            int: Total qubits used across physical, link, transport and application layers.
         """
 
         total_qubits = (self._physical.get_used_qubits() +
                         self._link.get_used_qubits() +
                         self._transport.get_used_qubits() +
                         self._application.get_used_qubits()
-                     
+
         )
         return total_qubits
 
     def get_metrics(self, metrics_requested=None, output_type="csv", file_name="metrics_output.csv"):
             """
-            Obtém as métricas da rede conforme solicitado e as exporta, printa ou armazena.
-            
+            Retrieve network metrics as requested and export, print, or store them.
+
             Args:
-                metrics_requested: Lista de métricas a serem retornadas (opcional). 
-                                Se None, todas as métricas serão consideradas.
-                output_type: Especifica como as métricas devem ser retornadas.
-                            "csv" para exportar em arquivo CSV (padrão),
-                            "print" para exibir no console,
-                            "variable" para retornar as métricas em uma variável.
-                file_name: Nome do arquivo CSV (usado somente quando output_type="csv").
-            
+                metrics_requested: List of metrics to return (optional).
+                                If None, all metrics will be included.
+                output_type: Specifies how metrics should be returned.
+                            "csv" to export as CSV file (default),
+                            "print" to display on console,
+                            "variable" to return metrics as a variable.
+                file_name: CSV file name (used only when output_type="csv").
+
             Returns:
-                Se output_type for "variable", retorna um dicionário com as métricas solicitadas.
+                If output_type is "variable", returns a dictionary with the requested metrics.
             """
-            # Dicionário com todas as métricas possíveis
+            # Dictionary with all available metrics
             available_metrics = {
-                "Timeslot Total": self.get_timeslot(),
-                "EPRs Usados": self.get_total_useds_eprs(),
-                "Qubits Usados": self.get_total_useds_qubits(),
-                "Fidelidade na Camada de Transporte": self.transportlayer.avg_fidelity_on_transportlayer(),
-                "Fidelidade na Camada de Enlace": self.linklayer.avg_fidelity_on_linklayer(),
-                "Média de Rotas": self.networklayer.get_avg_size_routes()
+                "Total Timeslot": self.get_timeslot(),
+                "Used EPRs": self.get_total_used_eprs(),
+                "Used Qubits": self.get_total_used_qubits(),
+                "Transport Layer Fidelity": self.transportlayer.avg_fidelity_on_transportlayer(),
+                "Link Layer Fidelity": self.linklayer.avg_fidelity_on_linklayer(),
+                "Average Routes": self.networklayer.get_avg_size_routes()
             }
-            
-            # Se não foram solicitadas métricas específicas, use todas
+
+            # If no specific metrics were requested, use all
             if metrics_requested is None:
                 metrics_requested = available_metrics.keys()
-            
-            # Filtra as métricas solicitadas
+
+            # Filter requested metrics
             metrics = {metric: available_metrics[metric] for metric in metrics_requested if metric in available_metrics}
 
-            # Tratamento conforme o tipo de saída solicitado
+            # Handle output based on requested type
             if output_type == "print":
                 for metric, value in metrics.items():
                     self.logger.log(f"{metric}: {value}")
@@ -388,24 +390,24 @@ class Network():
                 file_path = os.path.join(current_directory, file_name)
                 with open(file_path, mode='w', newline='') as file:
                     writer = csv.writer(file)
-                    writer.writerow(['Métrica', 'Valor'])
+                    writer.writerow(['Metric', 'Value'])
                     for metric, value in metrics.items():
                         writer.writerow([metric, value])
-                self.logger.log(f"Métricas exportadas com sucesso para {file_path}")
+                self.logger.log(f"Metrics successfully exported to {file_path}")
             elif output_type == "variable":
                 return metrics
             else:
-                raise ValueError("Tipo de saída inválido. Escolha entre 'print', 'csv' ou 'variable'.")
+                raise ValueError("Invalid output type. Choose between 'print', 'csv', or 'variable'.")
 
     def _decoherence_on_tick(self, clock):
         """
-        Callback de tick: aplica decoerência a todos os qubits e EPRs.
-        Chamado automaticamente pelo clock a cada tick().
+        Tick callback: apply decoherence to all qubits and EPRs.
+        Automatically called by the clock on each tick().
         """
         decoherence_factor = self.config.decoherence.per_timeslot
         current_timeslot = clock.now
 
-        # Aplicar decoerência nos qubits de cada host
+        # Apply decoherence to qubits in each host
         for host_id, host in self.hosts.items():
             for qubit in host.memory:
                 if qubit.qubit_id in self.qubit_timeslots:
@@ -415,11 +417,10 @@ class Network():
                         new_fidelity = current_fidelity * decoherence_factor
                         qubit.set_current_fidelity(new_fidelity)
 
-        # Aplicar decoerência nos EPRs em todos os canais (arestas da rede)
+        # Apply decoherence to EPRs in all channels (network edges)
         for edge in self.edges:
             if 'eprs' in self._graph.edges[edge]:
                 for epr in self._graph.edges[edge]['eprs']:
                     current_fidelity = epr.get_current_fidelity()
                     new_fidelity = current_fidelity * decoherence_factor
                     epr.set_fidelity(new_fidelity)
-

@@ -1,6 +1,5 @@
 import networkx as nx
-from ..components import Network, Host
-from ..objects import Logger
+from ..utils import Logger
 
 class Controller():
     def __init__(self, network):
@@ -44,7 +43,7 @@ class Controller():
             route (list): A list of nodes in the route.
         Returns:
             bool: True if the route is valid, False otherwise.
-        """       
+        """
         return True
 
     def announce_to_route_nodes(self, route):
@@ -55,9 +54,9 @@ class Controller():
         """
 
         if len(route) == 1:
-            self.logger.log(f'Nó {route[0]} informado.')
+            self.logger.log(f'Node {route[0]} informed.')
         for node in route[1:]:
-            self.logger.log(f'Nó {node} informado.')
+            self.logger.log(f'Node {node} informed.')
 
     def announce_to_alice_and_bob(self, route):
         """
@@ -66,5 +65,4 @@ class Controller():
             route (list): A list of nodes in the route.
         """
 
-        self.logger.log(f"Alice {route[0]} e Bob {route[-1]} informados.")
-
+        self.logger.log(f"Alice {route[0]} and Bob {route[-1]} informed.")
