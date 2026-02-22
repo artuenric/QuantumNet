@@ -85,7 +85,7 @@ class Host():
             raise Exception('O valor fornecido para host_id_for_connection deve ser um inteiro.')
         
         if host_id_for_connection not in self.connections:
-            self.connections.append(host_id_for_connection),
+            self.connections.append(host_id_for_connection)
 
     def add_qubit(self, qubit: Qubit):
         """

@@ -174,7 +174,7 @@ class TransportLayer:
         }
         
         # Adiciona o qubit teletransportado à memória de Bob com a fidelidade final calculada
-        qubit_alice.fidelity = F_final
+        qubit_alice.set_current_fidelity(F_final)
         bob.memory.append(qubit_alice)
         self.logger.log(f'Teletransporte de qubit de {alice_id} para {bob_id} foi bem-sucedido com fidelidade final de {F_final}. Timeslot: {self._network.get_timeslot()}')
         
@@ -312,7 +312,7 @@ class TransportLayer:
                     }
 
                     # Adiciona o qubit transmitido à memória de Bob
-                    qubit_alice.fidelity = F_final
+                    qubit_alice.set_current_fidelity(F_final)
                     bob.memory.append(qubit_alice)
 
                     # Incrementa o contador de qubits e timeslot

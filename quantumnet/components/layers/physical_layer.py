@@ -229,13 +229,13 @@ class PhysicalLayer:
         fidelity_qubit1 = self.fidelity_measurement_only_one(qubit1)
         fidelity_qubit2 = self.fidelity_measurement_only_one(qubit2)
                 
-        prob_on_demand_epr_create = self._network.edges[alice_host_id, bob_host_id]['prob_on_demand_epr_create']
+        prob_on_demand_epr_create = self._network.graph.edges[alice_host_id, bob_host_id]['prob_on_demand_epr_create']
         echp_success_probability = prob_on_demand_epr_create * fidelity_qubit1 * fidelity_qubit2
-            
+
         if uniform(0, 1) < echp_success_probability:
             self.logger.log(f'Timeslot {self._network.get_timeslot()}: Par EPR criado com a fidelidade de {fidelity_qubit1 * fidelity_qubit2}')
             epr = self.create_epr_pair(fidelity_qubit1 * fidelity_qubit2)
-            self._network.edges[alice_host_id, bob_host_id]['eprs'].append(epr)
+            self._network.graph.edges[alice_host_id, bob_host_id]['eprs'].append(epr)
             self.logger.log(f'Timeslot {self._network.get_timeslot()}: A probabilidade de sucesso do ECHP é {echp_success_probability}')
             return True
         self.logger.log(f'Timeslot {self._network.get_timeslot()}: A probabilidade de sucesso do ECHP falhou.')
@@ -260,13 +260,13 @@ class PhysicalLayer:
         fidelity_qubit1 = self.fidelity_measurement_only_one(qubit1)
         fidelity_qubit2 = self.fidelity_measurement_only_one(qubit2)
                
-        prob_replay_epr_create = self._network.edges[alice_host_id, bob_host_id]['prob_replay_epr_create']
+        prob_replay_epr_create = self._network.graph.edges[alice_host_id, bob_host_id]['prob_replay_epr_create']
         echp_success_probability = prob_replay_epr_create * fidelity_qubit1 * fidelity_qubit2
-        
+
         if uniform(0, 1) < echp_success_probability:
             self.logger.log(f'Timeslot {self._network.get_timeslot()}: Par EPR criado com a fidelidade de {fidelity_qubit1 * fidelity_qubit2}')
             epr = self.create_epr_pair(fidelity_qubit1 * fidelity_qubit2)
-            self._network.edges[alice_host_id, bob_host_id]['eprs'].append(epr)
+            self._network.graph.edges[alice_host_id, bob_host_id]['eprs'].append(epr)
             self.logger.log(f'Timeslot {self._network.get_timeslot()}: A probabilidade de sucesso do ECHP é {echp_success_probability}')
             return True
         self.logger.log(f'Timeslot {self._network.get_timeslot()}: A probabilidade de sucesso do ECHP falhou.')
