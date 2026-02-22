@@ -61,8 +61,8 @@ class LinkLayer:
             return False
 
         for attempt in range(1, 3):
-            self._network.timeslot()
-            self.logger.log(f'Timeslot {self._network.get_timeslot()}: Tentativa de emaranhamento entre {alice_id} e {bob_id}.')
+            self._network.clock.emit('link_request_attempt', alice=alice_id, bob=bob_id, attempt=attempt)
+            self.logger.log(f'Timeslot {self._network.clock.now}: Tentativa de emaranhamento entre {alice_id} e {bob_id}.')
 
             entangle = self._physical_layer.entanglement_creation_heralding_protocol(alice, bob)
 
@@ -76,11 +76,11 @@ class LinkLayer:
                 if self._physical_layer.created_eprs:
                     self.created_eprs.extend(self._physical_layer.created_eprs)
                     self._physical_layer.created_eprs.clear()  # Limpa a lista da camada física
-                
-                self.logger.log(f'Timeslot {self._network.get_timeslot()}: Entrelaçamento criado entre {alice} e {bob} na tentativa {attempt}.')
+
+                self.logger.log(f'Timeslot {self._network.clock.now}: Entrelaçamento criado entre {alice} e {bob} na tentativa {attempt}.')
                 return True
             else:
-                self.logger.log(f'Timeslot {self._network.get_timeslot()}: Entrelaçamento falhou entre {alice} e {bob} na tentativa {attempt}.')
+                self.logger.log(f'Timeslot {self._network.clock.now}: Entrelaçamento falhou entre {alice} e {bob} na tentativa {attempt}.')
                 self._failed_requests.append((alice_id, bob_id))
 
         # Verifica se deve realizar a purificação após duas falhas
@@ -142,12 +142,12 @@ class LinkLayer:
             bob_id : int : Id do host Bob.
             purification_type : int : Tipo de protocolo de purificação.
         """
-        self._network.timeslot()  # Incrementa o timeslot para a tentativa de purificação
+        self._network.clock.tick()
 
         eprs_fail = self._physical_layer.failed_eprs
 
         if len(eprs_fail) < 2:
-            self.logger.log(f'Timeslot {self._network.get_timeslot()}: Não há EPRs suficientes para purificação no canal ({alice_id}, {bob_id}).')
+            self.logger.log(f'Timeslot {self._network.clock.now}: Não há EPRs suficientes para purificação no canal ({alice_id}, {bob_id}).')
             return False
 
         eprs_fail1 = eprs_fail[-1]
@@ -170,17 +170,20 @@ class LinkLayer:
                 self._physical_layer.failed_eprs.remove(eprs_fail1)
                 self._physical_layer.failed_eprs.remove(eprs_fail2)
                 self.logger.log(f'EPRS Usados {self.used_eprs}')
-                self.logger.log(f'Timeslot {self._network.get_timeslot()}: Purificação bem sucedida no canal ({alice_id}, {bob_id}) com nova fidelidade {new_fidelity}.')
+                self._network.clock.emit('purification_success', alice=alice_id, bob=bob_id, fidelity=new_fidelity)
+                self.logger.log(f'Timeslot {self._network.clock.now}: Purificação bem sucedida no canal ({alice_id}, {bob_id}) com nova fidelidade {new_fidelity}.')
                 return True
             else:
                 self._physical_layer.failed_eprs.remove(eprs_fail1)
                 self._physical_layer.failed_eprs.remove(eprs_fail2)
-                self.logger.log(f'Timeslot {self._network.get_timeslot()}: Purificação falhou no canal ({alice_id}, {bob_id}) devido a baixa fidelidade após purificação.')
+                self._network.clock.emit('purification_failed', alice=alice_id, bob=bob_id, reason='low_fidelity')
+                self.logger.log(f'Timeslot {self._network.clock.now}: Purificação falhou no canal ({alice_id}, {bob_id}) devido a baixa fidelidade após purificação.')
                 return False
         else:
             self._physical_layer.failed_eprs.remove(eprs_fail1)
             self._physical_layer.failed_eprs.remove(eprs_fail2)
-            self.logger.log(f'Timeslot {self._network.get_timeslot()}: Purificação falhou no canal ({alice_id}, {bob_id}) devido a baixa probabilidade de sucesso da purificação.')
+            self._network.clock.emit('purification_failed', alice=alice_id, bob=bob_id, reason='low_probability')
+            self.logger.log(f'Timeslot {self._network.clock.now}: Purificação falhou no canal ({alice_id}, {bob_id}) devido a baixa probabilidade de sucesso da purificação.')
             return False
         
     def avg_fidelity_on_linklayer(self):

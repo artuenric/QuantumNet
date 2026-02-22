@@ -62,8 +62,8 @@ class ApplicationLayer:
         Returns:
             list: Lista de qubits preparados.
         """
-        self._network.timeslot()  # Incrementa o timeslot
-        self.logger.debug(f"Timeslot incrementado na função prepare_e91_qubits: {self._network.get_timeslot()}")
+        self._network.clock.emit('e91_qubits_prepared', num_qubits=len(key))
+        self.logger.debug(f"Qubits E91 preparados no timeslot: {self._network.clock.now}")
         qubits = []
         for bit, base in zip(key, bases):
             qubit = Qubit(qubit_id=random.randint(0, 1000))  # Cria um novo qubit com ID aleatório
@@ -85,8 +85,8 @@ class ApplicationLayer:
         Returns:
             list: Resultados das medições.
         """
-        self._network.timeslot()  # Incrementa o timeslot
-        self.logger.debug(f"Timeslot incrementado na função apply_bases_and_measure_e91: {self._network.get_timeslot()}")
+        self._network.clock.emit('e91_measurement', num_qubits=len(qubits))
+        self.logger.debug(f"Medições E91 realizadas no timeslot: {self._network.clock.now}")
         results = []
         for qubit, base in zip(qubits, bases):
             if base == 1:
@@ -129,8 +129,8 @@ class ApplicationLayer:
                 self.logger.log(f'Falha na transmissão dos qubits de Alice para Bob.')
                 return None
 
-            self._network.timeslot()  # Incrementa o timeslot após a transmissão
-            self.logger.debug(f"Timeslot incrementado após transmissão: {self._network.get_timeslot()}")
+            self._network.clock.tick()  # Rodada do protocolo E91 custa tempo
+            self.logger.debug(f"Rodada E91 concluída no timeslot: {self._network.clock.now}")
 
             # Etapa 3: Bob escolhe bases aleatórias e mede os qubits
             bases_bob = [random.choice([0, 1]) for _ in range(num_qubits)]  # Gera bases de medição aleatórias para Bob

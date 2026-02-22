@@ -98,10 +98,9 @@ class TransportLayer:
             self.logger.log(f'Número insuficiente de qubits na memória de Alice (Host {alice_id}). Criando mais {qubits_needed} qubits para completar os {num_qubits} necessários.')
 
             for _ in range(qubits_needed):
-                self._network.timeslot()  # Incrementa o timeslot a cada criação de qubit
-                self.logger.log(f"Timeslot antes da criação do qubit: {self._network.get_timeslot()}")
-                self._physical_layer.create_qubit(alice_id)  # Cria novos qubits para Alice
-                self.logger.log(f"Qubit criado para Alice (Host {alice_id}) no timeslot: {self._network.get_timeslot()}")
+                self._network.clock.tick()
+                self._physical_layer.create_qubit(alice_id)
+                self.logger.log(f"Qubit criado para Alice (Host {alice_id}) no timeslot: {self._network.clock.now}")
 
             # Atualiza a quantidade de qubits disponíveis após a criação
             available_qubits = len(alice.memory)
@@ -124,7 +123,7 @@ class TransportLayer:
                 route = self._network_layer.short_route_valid(alice_id, bob_id)
 
                 if route is None:
-                    self.logger.log(f'Não foi possível encontrar uma rota válida na tentativa {attempts + 1}. Timeslot: {self._network.get_timeslot()}')
+                    self.logger.log(f'Não foi possível encontrar uma rota válida na tentativa {attempts + 1}. Timeslot: {self._network.clock.now}')
                     break
 
                 # Verifica a fidelidade dos pares EPR ao longo da rota
@@ -161,7 +160,7 @@ class TransportLayer:
                         'fidelity_alice': f_alice,
                         'fidelity_route': f_route,
                         'F_final': F_final,
-                        'timeslot': self._network.get_timeslot(),
+                        'timeslot': self._network.clock.now,
                         'qubit': qubit_alice
                     }
 
@@ -172,6 +171,7 @@ class TransportLayer:
                     # Incrementa o contador de qubits e timeslot
                     success_count += 1
                     self.used_qubits += 1
+                    self._network.clock.emit('qubit_teleported', alice=alice_id, bob=bob_id, fidelity=F_final)
                     self.logger.log(f'Teletransporte de qubit de {alice_id} para {bob_id} na rota {route} foi bem-sucedido com fidelidade final de {F_final}.')
 
                     # Armazena as informações do qubit transmitido
@@ -183,10 +183,12 @@ class TransportLayer:
             attempts += 1
 
         if success_count == num_qubits:
-            self.logger.log(f'Transmissão e teletransporte de {num_qubits} qubits entre {alice_id} e {bob_id} concluídos com sucesso. Timeslot: {self._network.get_timeslot()}')
+            self._network.clock.emit('transport_complete', alice=alice_id, bob=bob_id, count=num_qubits)
+            self.logger.log(f'Transmissão e teletransporte de {num_qubits} qubits entre {alice_id} e {bob_id} concluídos com sucesso. Timeslot: {self._network.clock.now}')
             return True
         else:
-            self.logger.log(f'Falha na transmissão de {num_qubits} qubits entre {alice_id} e {bob_id}. Apenas {success_count} qubits foram transmitidos com sucesso. Timeslot: {self._network.get_timeslot()}')
+            self._network.clock.emit('transport_failed', alice=alice_id, bob=bob_id, delivered=success_count, requested=num_qubits)
+            self.logger.log(f'Falha na transmissão de {num_qubits} qubits entre {alice_id} e {bob_id}. Apenas {success_count} qubits foram transmitidos com sucesso. Timeslot: {self._network.clock.now}')
             return False
 
 

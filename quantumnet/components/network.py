@@ -1,5 +1,5 @@
 import networkx as nx
-from ..objects import Logger, Qubit
+from ..objects import Logger, Qubit, Clock
 from ..components import Host
 from .layers import *
 import random
@@ -10,7 +10,9 @@ class Network():
     """
     Um objeto para utilizar como rede.
     """
-    def __init__(self) -> None:
+    def __init__(self, clock: 'Clock' = None) -> None:
+        # Relógio da simulação
+        self.clock = clock if clock is not None else Clock()
         # Sobre a rede
         self._graph = nx.Graph()
         self._hosts = {}
@@ -25,8 +27,9 @@ class Network():
         #minimo e maximo
         self.max_prob = 1
         self.min_prob = 0.2
-        self.timeslot_total = 0
         self.qubit_timeslots = {}  # Dicionário para armazenar qubits criados e seus timeslots
+        # Registra decoerência como callback de tick
+        self.clock.on_tick(self._decoherence_on_tick)
 
     @property
     def hosts(self):
@@ -245,7 +248,7 @@ class Network():
         """
         for host_id in self._hosts:
             for i in range(num_qubits):
-                self.physical.create_qubit(host_id, increment_timeslot=False,increment_qubits=False)
+                self.physical.create_qubit(host_id, increment_qubits=False)
         print("Hosts inicializados")    
 
     def start_channels(self):
@@ -271,37 +274,31 @@ class Network():
         """
         for edge in self.edges:
             for i in range(num_eprs):
-                epr = self.physical.create_epr_pair(increment_timeslot=False,increment_eprs=False)
+                epr = self.physical.create_epr_pair(increment_eprs=False)
                 self._graph.edges[edge]['eprs'].append(epr)
                 self.logger.debug(f'Par EPR {epr} adicionado ao canal.')
         print("Pares EPRs adicionados")
 
         
-    def timeslot(self):
-        """
-        Incrementa o timeslot da rede.
-        """
-        self.timeslot_total += 1
-        self.apply_decoherence_to_all_layers()
-
     def get_timeslot(self):
         """
         Retorna o timeslot atual da rede.
+        Wrapper de compatibilidade; prefira usar self.clock.now diretamente.
 
         Returns:
             int : Timeslot atual da rede.
         """
-        return self.timeslot_total
+        return self.clock.now
 
-    def register_qubit_creation(self, qubit_id, timeslot, layer_name):
+    def register_qubit_creation(self, qubit_id, layer_name):
         """
-        Registra a criação de um qubit associando-o ao timeslot em que foi criado.
-    
+        Registra a criação de um qubit no timeslot atual do clock.
+
         Args:
             qubit_id (int): ID do qubit criado.
-            timeslot (int): Timeslot em que o qubit foi criado.
+            layer_name (str): Nome da camada que criou o qubit.
         """
-        self.qubit_timeslots[qubit_id] = {'timeslot': timeslot, 'layer': layer_name}
+        self.qubit_timeslots[qubit_id] = {'timeslot': self.clock.now, 'layer': layer_name}
         
     def display_all_qubit_timeslots(self):
         """
@@ -395,20 +392,22 @@ class Network():
             else:
                 raise ValueError("Tipo de saída inválido. Escolha entre 'print', 'csv' ou 'variable'.")
 
-    def apply_decoherence_to_all_layers(self, decoherence_factor: float = 0.9):
+    def _decoherence_on_tick(self, clock, decoherence_factor: float = 0.9):
         """
-        Aplica decoerência a todos os qubits e EPRs nas camadas da rede que já avançaram nos timeslots.
+        Callback de tick: aplica decoerência a todos os qubits e EPRs.
+        Chamado automaticamente pelo clock a cada tick().
         """
-        current_timeslot = self.get_timeslot()
+        current_timeslot = clock.now
 
         # Aplicar decoerência nos qubits de cada host
         for host_id, host in self.hosts.items():
             for qubit in host.memory:
-                creation_timeslot = self.qubit_timeslots[qubit.qubit_id]['timeslot']
-                if creation_timeslot < current_timeslot:
-                    current_fidelity = qubit.get_current_fidelity()
-                    new_fidelity = current_fidelity * decoherence_factor
-                    qubit.set_current_fidelity(new_fidelity)
+                if qubit.qubit_id in self.qubit_timeslots:
+                    creation_timeslot = self.qubit_timeslots[qubit.qubit_id]['timeslot']
+                    if creation_timeslot < current_timeslot:
+                        current_fidelity = qubit.get_current_fidelity()
+                        new_fidelity = current_fidelity * decoherence_factor
+                        qubit.set_current_fidelity(new_fidelity)
 
         # Aplicar decoerência nos EPRs em todos os canais (arestas da rede)
         for edge in self.edges:

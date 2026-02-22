@@ -37,21 +37,19 @@ class NetworkLayer:
         self.logger.debug(f"Qubits usados na camada {self.__class__.__name__}: {self.used_qubits}")
         return self.used_qubits
 
-    def short_route_valid(self, Alice: int, Bob: int, increment_timeslot=True) -> list:
+    def short_route_valid(self, Alice: int, Bob: int) -> list:
         """
         Escolhe a melhor rota entre dois hosts com critérios adicionais.
 
         args:
             Alice (int): ID do host de origem.
             Bob (int): ID do host de destino.
-            increment_timeslot (bool): Indica se o timeslot deve ser incrementado.
-            
+
         returns:
             list or None: Lista com a melhor rota entre os hosts ou None se não houver rota válida.
         """
-        if increment_timeslot:
-            self._network.timeslot()  # Incrementa o timeslot sempre que uma rota é verificada
-            self.logger.log(f'Timeslot {self._network.get_timeslot()}: Buscando rota válida entre {Alice} e {Bob}.')
+        self._network.clock.emit('route_lookup', alice=Alice, bob=Bob)
+        self.logger.log(f'Timeslot {self._network.clock.now}: Buscando rota válida entre {Alice} e {Bob}.')
 
         if Alice is None or Bob is None:
             self.logger.log('IDs de hosts inválidos fornecidos.')
@@ -117,8 +115,8 @@ class NetworkLayer:
         # Itera sobre a rota realizando o entanglement swapping para cada segmento da rota
         while len(route) > 1:
             # Incrementa o timeslot antes de cada operação de entanglement swapping
-            self._network.timeslot()
-            self.logger.log(f'Timeslot {self._network.get_timeslot()}: Realizando Entanglement Swapping.')
+            self._network.clock.tick()
+            self.logger.log(f'Timeslot {self._network.clock.now}: Realizando Entanglement Swapping.')
 
             node1 = route[0]    # Primeiro nó na rota
             node2 = route[1]    # Segundo nó na rota
@@ -188,6 +186,7 @@ class NetworkLayer:
                 route.pop(1)
 
         # Loga o sucesso do entanglement swapping
+        self._network.clock.emit('entanglement_swapping_complete', alice=Alice, bob=Bob)
         self.logger.log(f'Entanglement Swapping concluído com sucesso entre {Alice} e {Bob}')
         return True
 
