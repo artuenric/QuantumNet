@@ -104,11 +104,11 @@ class PhysicalLayer:
         self._context.register_qubit_creation(qubit_id, "Physical Layer")
 
         self._context.clock.emit('qubit_created', host_id=host_id, qubit_id=qubit_id)
-        self.logger.debug(f'Qubit {qubit_id} created with initial fidelity {qubit.get_initial_fidelity()} and added to memory of Host {host_id}.')
+        self.logger.debug(f'Qubit {qubit_id} created with initial fidelity {qubit.initial_fidelity} and added to memory of Host {host_id}.')
 
         # Schedule TTL death
         ttl = _compute_ttl(
-            qubit.get_initial_fidelity(),
+            qubit.initial_fidelity,
             self._context.config.decoherence.per_timeslot,
             self._context.config.decoherence.qubit_ttl_threshold
         )
@@ -153,7 +153,7 @@ class PhysicalLayer:
 
         # Schedule TTL death
         ttl = _compute_ttl(
-            epr.get_current_fidelity(),
+            epr.current_fidelity,
             self._context.config.decoherence.per_timeslot,
             self._context.config.decoherence.epr_ttl_threshold
         )
@@ -219,12 +219,12 @@ class PhysicalLayer:
         Returns:
             float: Qubit fidelity.
         """
-        fidelity = qubit.get_current_fidelity()
+        fidelity = qubit.current_fidelity
 
         if self._context.clock.now > 0:
             # Apply decoherence factor per measurement
             new_fidelity = max(0, fidelity * self._context.config.decoherence.per_measurement)
-            qubit.set_current_fidelity(new_fidelity)
+            qubit.current_fidelity = new_fidelity
             self.logger.log(f'The fidelity of qubit {qubit} is {new_fidelity}')
             return new_fidelity
 
@@ -259,8 +259,8 @@ class PhysicalLayer:
         qubit1 = alice.consume_last_qubit()
         qubit2 = bob.consume_last_qubit()
 
-        q1 = qubit1.get_current_fidelity()
-        q2 = qubit2.get_current_fidelity()
+        q1 = qubit1.current_fidelity
+        q2 = qubit2.current_fidelity
 
         epr_fidelity = q1 * q2
         self.logger.log(f'Timeslot {self._context.clock.now}: EPR pair created with fidelity {epr_fidelity}')

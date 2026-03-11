@@ -16,10 +16,12 @@ class Qubit():
     def __str__(self):
         return f"Qubit {self.qubit_id} with state {self._qubit_state}"
 
-    def get_initial_fidelity(self):
+    @property
+    def initial_fidelity(self) -> float:
         return self._initial_fidelity
 
-    def get_current_fidelity(self) -> float:
+    @property
+    def current_fidelity(self) -> float:
         """
         Compute current fidelity on demand, accounting for time-based decoherence.
 
@@ -35,7 +37,8 @@ class Qubit():
             return self._base_fidelity
         return self._base_fidelity * (self._decoherence_rate ** elapsed)
 
-    def set_current_fidelity(self, new_fidelity: float):
+    @current_fidelity.setter
+    def current_fidelity(self, new_fidelity: float):
         """
         Snapshot fidelity at the current timeslot.
 
