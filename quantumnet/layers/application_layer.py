@@ -1,7 +1,7 @@
 import random
-from quantumnet.topology import Host
-from quantumnet.quantum import Qubit
-from quantumnet.utils import Logger
+from ..topology import Host
+from ..quantum import Qubit
+from ..utils import Logger
 
 class ApplicationLayer:
     def __init__(self, context, transport_layer):

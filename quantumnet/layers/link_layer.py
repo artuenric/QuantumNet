@@ -1,7 +1,7 @@
 import networkx as nx
-from quantumnet.topology import Host
-from quantumnet.utils import Logger
-from quantumnet.quantum import Epr
+from ..topology import Host
+from ..utils import Logger
+from ..quantum import Epr
 from random import uniform
 
 class LinkLayer:
@@ -178,8 +178,8 @@ class LinkLayer:
 
         eprs_fail1 = eprs_fail[-1]
         eprs_fail2 = eprs_fail[-2]
-        f1 = eprs_fail1.get_current_fidelity()
-        f2 = eprs_fail2.get_current_fidelity()
+        f1 = eprs_fail1.current_fidelity
+        f2 = eprs_fail2.current_fidelity
 
         purification_prob = (f1 * f2) + ((1 - f1) * (1 - f2))
 
@@ -234,7 +234,7 @@ class LinkLayer:
         total_eprs = len(self.created_eprs)
 
         for epr in self.created_eprs:
-            total_fidelity += epr.get_current_fidelity()
+            total_fidelity += epr.current_fidelity
 
         if total_eprs == 0:
             self.logger.log('No EPRs created in the link layer.')

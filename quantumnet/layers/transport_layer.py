@@ -1,7 +1,7 @@
 import networkx as nx
-from quantumnet.topology import Host
-from quantumnet.utils import Logger
-from quantumnet.quantum import Epr
+from ..topology import Host
+from ..utils import Logger
+from ..quantum import Epr
 from random import uniform
 
 class TransportLayer:
@@ -166,7 +166,7 @@ class TransportLayer:
                     if len(epr_pairs) == 0:
                         self.logger.log(f'Could not find enough EPR pairs on route {route[i]} -> {route[i + 1]}.')
                         break
-                    fidelities.extend([epr.get_current_fidelity() for epr in epr_pairs])
+                    fidelities.extend([epr.current_fidelity for epr in epr_pairs])
 
                 # If failed to find enough EPR pairs, try on next attempt
                 if len(fidelities) == 0:
@@ -178,7 +178,7 @@ class TransportLayer:
                 # If route is found, transmit the qubit immediately
                 if len(alice.memory) > 0:  # Check if Alice still has qubits in memory
                     qubit_alice = alice.memory.pop(0)  # REMOVE qubit from Alice
-                    f_alice = qubit_alice.get_current_fidelity()
+                    f_alice = qubit_alice.current_fidelity
                     F_final = f_alice * f_route
 
                     # Store transmitted qubit information
@@ -194,7 +194,7 @@ class TransportLayer:
                     }
 
                     # Add transmitted qubit to Bob's memory
-                    qubit_alice.set_current_fidelity(F_final)
+                    qubit_alice.current_fidelity = F_final
                     bob.memory.append(qubit_alice)
 
                     # Increment qubit counter

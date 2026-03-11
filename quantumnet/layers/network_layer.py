@@ -1,7 +1,7 @@
 import networkx as nx
-from quantumnet.topology import Host
-from quantumnet.utils import Logger
-from quantumnet.quantum import Epr
+from ..topology import Host
+from ..utils import Logger
+from ..quantum import Epr
 from random import uniform
 
 class NetworkLayer:
@@ -165,8 +165,8 @@ class NetworkLayer:
                     on_complete(success=False)
                 return
 
-            fidelity1 = epr1.get_current_fidelity()
-            fidelity2 = epr2.get_current_fidelity()
+            fidelity1 = epr1.current_fidelity
+            fidelity2 = epr2.current_fidelity
 
             success_prob = fidelity1 * fidelity2 + (1 - fidelity1) * (1 - fidelity2)
 
