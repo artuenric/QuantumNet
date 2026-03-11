@@ -105,13 +105,13 @@ class LinkLayer:
             alice, bob, on_complete=on_heralding_done
         )
 
-    def purification_calculator(self, f1: int, f2: int, purification_type: int) -> float:
+    def purification_calculator(self, f1: float, f2: float, purification_type: int) -> float:
         """
         Purification formula calculation.
 
         Args:
-            f1 (int): Fidelity of the first EPR.
-            f2 (int): Fidelity of the second EPR.
+            f1 (float): Fidelity of the first EPR.
+            f2 (float): Fidelity of the second EPR.
             purification_type (int): Chosen formula (1 - Default, 2 - BBPSSW Protocol, 3 - DEJMPS Protocol).
 
         Returns:

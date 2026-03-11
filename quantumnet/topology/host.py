@@ -75,7 +75,7 @@ class Host():
             host_id_for_connection (int): Host ID of the host to be connected.
         """
 
-        if type(host_id_for_connection) != int:
+        if not isinstance(host_id_for_connection, int):
             raise TypeError('Value provided for host_id_for_connection must be an integer.')
 
         if host_id_for_connection not in self.connections:
@@ -113,7 +113,7 @@ class Host():
         return {
             'host_id': self.host_id,
             'memory': len(self.memory),
-            'routing_table': "No registration" if self.routing_table == None else self.routing_table
+            'routing_table': "No registration" if self.routing_table is None else self.routing_table
         }
 
     def announce_to_controller_app_has_finished(self):

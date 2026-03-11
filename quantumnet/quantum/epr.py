@@ -1,7 +1,8 @@
 import random
+from typing import Union
 
 class Epr():
-    def __init__(self, epr_id: int, initial_fidelity: float = None,
+    def __init__(self, epr_id: Union[int, tuple], initial_fidelity: float = None,
                  clock=None, decoherence_rate: float = 1.0) -> None:
         self._epr_id = epr_id
         self._initial_fidelity = initial_fidelity if initial_fidelity is not None else random.uniform(0, 1)
