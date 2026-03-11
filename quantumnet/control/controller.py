@@ -44,6 +44,19 @@ class Controller():
         Returns:
             bool: True if the route is valid, False otherwise.
         """
+        if not route:
+            return False
+
+        # Check if all nodes exist in the graph
+        for node in route:
+            if node not in self.network.graph.nodes:
+                return False
+
+        # Check if there are edges between consecutive nodes
+        for i in range(len(route) - 1):
+            if not self.network.graph.has_edge(route[i], route[i + 1]):
+                return False
+
         return True
 
     def announce_to_route_nodes(self, route):
