@@ -16,6 +16,17 @@ class Qubit():
     def __str__(self):
         return f"Qubit {self.qubit_id} with state {self._qubit_state}"
 
+    def __repr__(self):
+        return f"Qubit(id={self.qubit_id}, state={self._qubit_state}, fidelity={self.current_fidelity:.4f})"
+
+    def __eq__(self, other):
+        if not isinstance(other, Qubit):
+            return NotImplemented
+        return self.qubit_id == other.qubit_id
+
+    def __hash__(self):
+        return hash(self.qubit_id)
+
     @property
     def initial_fidelity(self) -> float:
         return self._initial_fidelity

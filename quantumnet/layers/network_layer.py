@@ -26,32 +26,32 @@ class NetworkLayer:
             str: String representation of the network layer."""
         return 'Network Layer'
 
-    def short_route_valid(self, Alice: int, Bob: int) -> list:
+    def short_route_valid(self, alice: int, bob: int) -> list:
         """
         Choose the best route between two hosts with additional criteria.
 
         Args:
-            Alice (int): Source host ID.
-            Bob (int): Destination host ID.
+            alice (int): Source host ID.
+            bob (int): Destination host ID.
 
         Returns:
             list or None: List with the best route between hosts or None if no valid route exists.
         """
-        self._context.clock.emit('route_lookup', alice=Alice, bob=Bob)
-        self.logger.log(f'Timeslot {self._context.clock.now}: Looking for valid route between {Alice} and {Bob}.')
+        self._context.clock.emit('route_lookup', alice=alice, bob=bob)
+        self.logger.log(f'Timeslot {self._context.clock.now}: Looking for valid route between {alice} and {bob}.')
 
-        if Alice is None or Bob is None:
+        if alice is None or bob is None:
             self.logger.log('Invalid host IDs provided.')
             return None
 
-        if not self._context.graph.has_node(Alice) or not self._context.graph.has_node(Bob):
-            self.logger.log(f'One of the nodes ({Alice} or {Bob}) does not exist in the graph.')
+        if not self._context.graph.has_node(alice) or not self._context.graph.has_node(bob):
+            self.logger.log(f'One of the nodes ({alice} or {bob}) does not exist in the graph.')
             return None
 
         try:
-            all_shortest_paths = list(nx.all_shortest_paths(self._context.graph, Alice, Bob))
+            all_shortest_paths = list(nx.all_shortest_paths(self._context.graph, alice, bob))
         except nx.NetworkXNoPath:
-            self.logger.log(f'No route found between {Alice} and {Bob}')
+            self.logger.log(f'No route found between {alice} and {bob}')
             return None
 
         for path in all_shortest_paths:
@@ -68,15 +68,15 @@ class NetworkLayer:
                 self.logger.log(f'Valid route found: {path}')
 
                 # Store the route if it's the first time it's used
-                if (Alice, Bob) not in self.routes_used:
-                    self.routes_used[(Alice, Bob)] = path.copy()
+                if (alice, bob) not in self.routes_used:
+                    self.routes_used[(alice, bob)] = path.copy()
 
                 return path
 
         self.logger.log('No valid route found.')
         return None
 
-    def entanglement_swapping(self, Alice: int = None, Bob: int = None, on_complete=None):
+    def entanglement_swapping(self, alice: int = None, bob: int = None, on_complete=None):
         """
         Schedule entanglement swapping across the shortest valid route. Fire-and-forget.
 
@@ -85,11 +85,11 @@ class NetworkLayer:
           - on_complete(success=True/False) callback if provided
 
         Args:
-            Alice (int, optional): Source host ID.
-            Bob (int, optional): Destination host ID.
+            alice (int, optional): Source host ID.
+            bob (int, optional): Destination host ID.
             on_complete: Optional callback(success=bool).
         """
-        route = self.short_route_valid(Alice, Bob)
+        route = self.short_route_valid(alice, bob)
 
         if route is None or len(route) < 2:
             self.logger.log('Could not determine a valid route.')

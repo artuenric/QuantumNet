@@ -13,6 +13,17 @@ class Epr():
         self._base_fidelity = self._initial_fidelity
         self._base_timeslot = clock.now if clock else 0
 
+    def __repr__(self):
+        return f"Epr(id={self._epr_id}, fidelity={self.current_fidelity:.4f})"
+
+    def __eq__(self, other):
+        if not isinstance(other, Epr):
+            return NotImplemented
+        return self._epr_id == other._epr_id
+
+    def __hash__(self):
+        return hash(self._epr_id)
+
     @property
     def epr_id(self):
         return self._epr_id
