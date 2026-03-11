@@ -245,16 +245,16 @@ class PhysicalLayer:
 
     def _do_heralding(self, alice, bob, on_complete=None):
         """Execute heralding at the scheduled timeslot."""
-        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
-
-        qubit1 = alice.consume_last_qubit()
-        qubit2 = bob.consume_last_qubit()
-
-        if qubit1 is None or qubit2 is None:
+        if not alice.memory or not bob.memory:
             self.logger.log(f'Timeslot {self._context.clock.now}: Heralding failed — insufficient qubits (Alice={alice.host_id}, Bob={bob.host_id}).')
             if on_complete is not None:
                 on_complete(success=False)
             return
+
+        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
+
+        qubit1 = alice.consume_last_qubit()
+        qubit2 = bob.consume_last_qubit()
 
         q1 = qubit1.current_fidelity
         q2 = qubit2.current_fidelity
@@ -301,16 +301,19 @@ class PhysicalLayer:
 
     def _do_on_demand(self, alice_host_id, bob_host_id, on_complete=None):
         """Execute on-demand ECHP at the scheduled timeslot."""
-        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
+        alice = self._context.hosts[alice_host_id]
+        bob = self._context.hosts[bob_host_id]
 
-        qubit1 = self._context.hosts[alice_host_id].consume_last_qubit()
-        qubit2 = self._context.hosts[bob_host_id].consume_last_qubit()
-
-        if qubit1 is None or qubit2 is None:
+        if not alice.memory or not bob.memory:
             self.logger.log(f'Timeslot {self._context.clock.now}: On-demand ECHP failed — insufficient qubits (Alice={alice_host_id}, Bob={bob_host_id}).')
             if on_complete is not None:
                 on_complete(success=False)
             return
+
+        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
+
+        qubit1 = alice.consume_last_qubit()
+        qubit2 = bob.consume_last_qubit()
 
         fidelity_qubit1 = self.fidelity_measurement_only_one(qubit1)
         fidelity_qubit2 = self.fidelity_measurement_only_one(qubit2)
@@ -350,16 +353,19 @@ class PhysicalLayer:
 
     def _do_on_replay(self, alice_host_id, bob_host_id, on_complete=None):
         """Execute replay ECHP at the scheduled timeslot."""
-        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
+        alice = self._context.hosts[alice_host_id]
+        bob = self._context.hosts[bob_host_id]
 
-        qubit1 = self._context.hosts[alice_host_id].consume_last_qubit()
-        qubit2 = self._context.hosts[bob_host_id].consume_last_qubit()
-
-        if qubit1 is None or qubit2 is None:
+        if not alice.memory or not bob.memory:
             self.logger.log(f'Timeslot {self._context.clock.now}: Replay ECHP failed — insufficient qubits (Alice={alice_host_id}, Bob={bob_host_id}).')
             if on_complete is not None:
                 on_complete(success=False)
             return
+
+        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
+
+        qubit1 = alice.consume_last_qubit()
+        qubit2 = bob.consume_last_qubit()
 
         fidelity_qubit1 = self.fidelity_measurement_only_one(qubit1)
         fidelity_qubit2 = self.fidelity_measurement_only_one(qubit2)
