@@ -23,3 +23,7 @@ Commit: fix(qubit): centraliza geracao de IDs de qubit para evitar colisoes{
 Commit: fix(epr): corrige consistencia de decoerencia e nomenclatura em EPR{
     1.8 - Problema ja resolvido pela refatoracao anterior que substituiu o callback _decoherence_on_tick() por avaliacao lazy em get_current_fidelity(). Tanto Qubit quanto Epr agora calculam decoerencia sob demanda com a formula base_fidelity * (decoherence_rate ** elapsed), onde elapsed = clock.now - base_timeslot. A guarda elapsed <= 0 impede aplicacao de decoerencia no mesmo timeslot de criacao, eliminando a inconsistencia original. Renomeado set_fidelity() para set_current_fidelity() em Epr para alinhar com Qubit. Alteracao em epr.py.
 }
+
+Commit: fix(link): corrige contagem de falhas acumulativa global em LinkLayer.request{
+    1.9 - self._failed_requests (lista global) substituida por contador self._failed_request_count (para metricas/log) e contador local failures passado por parametro em _start_attempt(). A decisao de purificacao agora usa o contador local da requisicao corrente, nao o acumulado global. Falhas sao registradas via log e incremento do contador global, sem armazenar tuplas em lista. Propriedade renomeada de failed_requests para failed_request_count. Notebook link_layer.ipynb atualizado. Alteracoes em link_layer.py e link_layer.ipynb.
+}

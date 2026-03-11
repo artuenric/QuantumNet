@@ -16,7 +16,7 @@ class LinkLayer:
         self._context = context
         self._physical_layer = physical_layer
         self._requests = []
-        self._failed_requests = []
+        self._failed_request_count = 0
         self.logger = Logger.get_instance()
         self.used_eprs = 0  # Initialize used EPRs counter
         self.used_qubits = 0  # Initialize used qubits counter
@@ -27,8 +27,8 @@ class LinkLayer:
         return self._requests
 
     @property
-    def failed_requests(self):
-        return self._failed_requests
+    def failed_request_count(self):
+        return self._failed_request_count
 
     def __str__(self):
         """ Return the string representation of the link layer.
@@ -59,15 +59,15 @@ class LinkLayer:
             bob_id (int): Bob host ID.
             on_complete: Optional callback(success=bool).
         """
-        self._start_attempt(alice_id, bob_id, attempt=1, on_complete=on_complete)
+        self._start_attempt(alice_id, bob_id, attempt=1, failures=0, on_complete=on_complete)
 
-    def _start_attempt(self, alice_id, bob_id, attempt, on_complete):
+    def _start_attempt(self, alice_id, bob_id, attempt, failures, on_complete):
         """Schedule the next heralding attempt or fall back to purification."""
         max_attempts = self._context.config.protocol.link_max_attempts
 
         if attempt > max_attempts:
-            # All attempts failed; try purification if enough failures accumulated
-            if len(self._failed_requests) >= self._context.config.protocol.link_purification_after_failures:
+            # All attempts failed; try purification if enough failures in this request
+            if failures >= self._context.config.protocol.link_purification_after_failures:
                 self.purification(alice_id, bob_id, on_complete=on_complete)
             else:
                 # Transfer remaining EPRs
@@ -109,9 +109,9 @@ class LinkLayer:
                     on_complete(success=True)
             else:
                 self.logger.log(f'Timeslot {self._context.clock.now}: Entanglement failed between {alice_id} and {bob_id} on attempt {attempt}.')
-                self._failed_requests.append((alice_id, bob_id))
+                self._failed_request_count += 1
                 # Retry: schedule next attempt
-                self._start_attempt(alice_id, bob_id, attempt + 1, on_complete)
+                self._start_attempt(alice_id, bob_id, attempt + 1, failures + 1, on_complete)
 
         # Schedule heralding (async, result comes via on_heralding_done)
         self._physical_layer.entanglement_creation_heralding_protocol(
