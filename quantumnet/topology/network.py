@@ -221,22 +221,22 @@ class Network():
         if topology_name == 'Grid':
             if len(args) != 2:
                 raise Exception('Grid topology requires two arguments.')
-            self._graph = nx.grid_2d_graph(*args)
+            new_graph = nx.grid_2d_graph(*args)
         elif topology_name == 'Line':
             if len(args) != 1:
                 raise Exception('Line topology requires one argument.')
-            self._graph = nx.path_graph(*args)
+            new_graph = nx.path_graph(*args)
         elif topology_name == 'Ring':
             if len(args) != 1:
                 raise Exception('Ring topology requires one argument.')
-            self._graph = nx.cycle_graph(*args)
+            new_graph = nx.cycle_graph(*args)
         else:
             raise ValueError(f"Unknown topology '{topology_name}'. Available: Grid, Line, Ring.")
 
-        # Convert node labels to integers
-        self._graph = nx.convert_node_labels_to_integers(self._graph)
-        # Update reference in shared context
-        self._context.graph = self._graph
+        # Update graph in-place to preserve existing references (context, layers)
+        new_graph = nx.convert_node_labels_to_integers(new_graph)
+        self._graph.clear()
+        self._graph.update(new_graph)
 
         # Create hosts and add to hosts dictionary
         for node in self._graph.nodes():
