@@ -62,3 +62,10 @@ Commit: fix(typing): corrige type hints e verificacoes de tipo em link_layer, ho
     4.3 - Host.info() em host.py: comparacao self.routing_table == None substituida por self.routing_table is None, seguindo a convencao PEP 8.
     4.4 - Epr.__init__ em epr.py: epr_id anotado como Union[int, tuple] para refletir os dois usos reais: int em physical_layer e tuple (alice_id, bob_id) em link_layer e network_layer.
 }
+
+Commit: fix(style): corrige convencoes de nomenclatura e adiciona repr/eq/hash em Qubit e Epr{
+    6.4 - Nao aplicavel: set_current_fidelity() ja removido na correcao 2.2 (substituido por @property setter). Nenhuma alteracao necessaria.
+    6.5 - Parametros Alice e Bob em network_layer.py renomeados para alice e bob (snake_case), nas assinaturas e docstrings de short_route_valid() e entanglement_swapping(). Alteracao em network_layer.py.
+    6.6 - __repr__ adicionado a Qubit e Epr, expondo id, estado(qubit) e fidelidade atual com 4 casas decimais. Alteracao em qubit.py e epr.py.
+    6.7 - __eq__ e __hash__ adicionados a Qubit e Epr com base no respectivo id, tornando list.remove() e operacoes de colecao dependentes de valor em vez de identidade de objeto. Alteracao em qubit.py e epr.py.
+}
