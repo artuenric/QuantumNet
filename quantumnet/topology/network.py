@@ -318,35 +318,6 @@ class Network():
                 self.logger.log(f"Qubit {qubit_id} was created at timeslot {info['timeslot']} in layer {info['layer']}")
 
 
-    def get_total_used_eprs(self):
-        """
-        Return the total number of EPRs (entangled pairs) used in the network.
-
-        Returns:
-            int: Total EPRs used across physical, link and network layers.
-        """
-        total_eprs = (self._physical.get_used_eprs()+
-                      self._link.get_used_eprs() +
-                      self._network.get_used_eprs()
-        )
-        return total_eprs
-
-    def get_total_used_qubits(self):
-        """
-        Return the total number of qubits used across the entire network.
-
-        Returns:
-            int: Total qubits used across physical, link, transport and application layers.
-        """
-
-        total_qubits = (self._physical.get_used_qubits() +
-                        self._link.get_used_qubits() +
-                        self._transport.get_used_qubits() +
-                        self._application.get_used_qubits()
-
-        )
-        return total_qubits
-
     def get_metrics(self, metrics_requested=None, output_type="csv", file_name="metrics_output.csv"):
             """
             Retrieve network metrics as requested and export, print, or store them.
@@ -366,8 +337,6 @@ class Network():
             # Dictionary with all available metrics
             available_metrics = {
                 "Total Timeslot": self.get_timeslot(),
-                "Used EPRs": self.get_total_used_eprs(),
-                "Used Qubits": self.get_total_used_qubits(),
                 "Transport Layer Fidelity": self.transportlayer.avg_fidelity_on_transportlayer(),
                 "Link Layer Fidelity": self.linklayer.avg_fidelity_on_linklayer(),
                 "Average Routes": self.networklayer.get_avg_size_routes()

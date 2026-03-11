@@ -18,8 +18,6 @@ class LinkLayer:
         self._requests = []
         self._failed_request_count = 0
         self.logger = Logger.get_instance()
-        self.used_eprs = 0  # Initialize used EPRs counter
-        self.used_qubits = 0  # Initialize used qubits counter
         self.created_eprs = []  # Store EPRs created by the physical layer
 
     @property
@@ -37,14 +35,6 @@ class LinkLayer:
             str: String representation of the link layer.
         """
         return 'Link Layer'
-
-    def get_used_eprs(self):
-        self.logger.debug(f"EPRs used in layer {self.__class__.__name__}: {self.used_eprs}")
-        return self.used_eprs
-
-    def get_used_qubits(self):
-        self.logger.debug(f"Qubits used in layer {self.__class__.__name__}: {self.used_qubits}")
-        return self.used_qubits
 
     def request(self, alice_id: int, bob_id: int, on_complete=None):
         """
@@ -96,8 +86,8 @@ class LinkLayer:
         # Define what happens when heralding completes
         def on_heralding_done(success):
             if success:
-                self.used_eprs += 1
-                self.used_qubits += 2
+                self.logger.log(f'{self.__class__.__name__}: 1 EPR used')
+                self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
                 self._requests.append((alice_id, bob_id))
                 if self._physical_layer.created_eprs:
                     self.created_eprs.extend(self._physical_layer.created_eprs)
@@ -183,9 +173,8 @@ class LinkLayer:
 
         purification_prob = (f1 * f2) + ((1 - f1) * (1 - f2))
 
-        # Increment used EPRs count, as both will be used in the purification attempt
-        self.used_eprs += 2
-        self.used_qubits += 4
+        self.logger.log(f'{self.__class__.__name__}: 2 EPRs used')
+        self.logger.log(f'{self.__class__.__name__}: 4 qubits used')
 
         success = False
         if purification_prob > self._context.config.fidelity.purification_min_probability:
@@ -200,7 +189,6 @@ class LinkLayer:
                 self._physical_layer.add_epr_to_channel(epr_purified, (alice_id, bob_id))
                 self._physical_layer.failed_eprs.remove(eprs_fail1)
                 self._physical_layer.failed_eprs.remove(eprs_fail2)
-                self.logger.log(f'Used EPRs {self.used_eprs}')
                 self._context.clock.emit('purification_success', alice=alice_id, bob=bob_id, fidelity=new_fidelity)
                 self.logger.log(f'Timeslot {self._context.clock.now}: Purification succeeded on channel ({alice_id}, {bob_id}) with new fidelity {new_fidelity}.')
                 success = True

@@ -19,8 +19,6 @@ class TransportLayer:
         self._network_layer = network_layer
         self.logger = Logger.get_instance()
         self.transmitted_qubits = []
-        self.used_eprs = 0
-        self.used_qubits = 0
         self.created_eprs = []  # List to store created EPRs
 
     def __str__(self):
@@ -29,14 +27,6 @@ class TransportLayer:
         Returns:
             str: String representation of the transport layer."""
         return f'Transport Layer'
-
-    def get_used_eprs(self):
-        self.logger.debug(f"EPRs used in layer {self.__class__.__name__}: {self.used_eprs}")
-        return self.used_eprs
-
-    def get_used_qubits(self):
-        self.logger.debug(f"Qubits used in layer {self.__class__.__name__}: {self.used_qubits}")
-        return self.used_qubits
 
     def avg_fidelity_on_transportlayer(self):
         """
@@ -197,9 +187,8 @@ class TransportLayer:
                     qubit_alice.current_fidelity = F_final
                     bob.memory.append(qubit_alice)
 
-                    # Increment qubit counter
                     success_count += 1
-                    self.used_qubits += 1
+                    self.logger.log(f'{self.__class__.__name__}: 1 qubit used')
                     self._context.clock.emit('qubit_teleported', alice=alice_id, bob=bob_id, fidelity=F_final)
                     self.logger.log(f'Qubit teleportation from {alice_id} to {bob_id} on route {route} succeeded with final fidelity {F_final}.')
 

@@ -39,8 +39,6 @@ class PhysicalLayer:
         self.created_eprs = []  # List to store all created EPRs
         self._count_epr = 0
         self.logger = Logger.get_instance()
-        self.used_eprs = 0
-        self.used_qubits = 0
 
 
     def __str__(self):
@@ -69,14 +67,6 @@ class PhysicalLayer:
         """
         return self._failed_eprs
 
-    def get_used_eprs(self):
-        self.logger.debug(f"EPRs used in layer {self.__class__.__name__}: {self.used_eprs}")
-        return self.used_eprs
-
-    def get_used_qubits(self):
-        self.logger.debug(f"Qubits used in layer {self.__class__.__name__}: {self.used_qubits}")
-        return self.used_qubits
-
     def create_qubit(self, host_id: int, increment_qubits: bool = True):
         """Create a qubit and add it to the specified host's memory.
 
@@ -88,7 +78,7 @@ class PhysicalLayer:
             Exception: If the specified host does not exist in the network.
         """
         if increment_qubits:
-            self.used_qubits += 1
+            self.logger.log(f'{self.__class__.__name__}: 1 qubit used')
 
         if host_id not in self._context.hosts:
             raise Exception(f'Host {host_id} does not exist in the network.')
@@ -127,7 +117,7 @@ class PhysicalLayer:
             Epr: Created EPR pair.
         """
         if increment_eprs:
-            self.used_eprs += 1
+            self.logger.log(f'{self.__class__.__name__}: 1 EPR used')
 
         epr = Epr(
             self._count_epr, fidelity,
@@ -254,7 +244,7 @@ class PhysicalLayer:
 
     def _do_heralding(self, alice, bob, on_complete=None):
         """Execute heralding at the scheduled timeslot."""
-        self.used_qubits += 2
+        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
 
         qubit1 = alice.consume_last_qubit()
         qubit2 = bob.consume_last_qubit()
@@ -304,7 +294,7 @@ class PhysicalLayer:
 
     def _do_on_demand(self, alice_host_id, bob_host_id, on_complete=None):
         """Execute on-demand ECHP at the scheduled timeslot."""
-        self.used_qubits += 2
+        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
 
         qubit1 = self._context.hosts[alice_host_id].consume_last_qubit()
         qubit2 = self._context.hosts[bob_host_id].consume_last_qubit()
@@ -347,7 +337,7 @@ class PhysicalLayer:
 
     def _do_on_replay(self, alice_host_id, bob_host_id, on_complete=None):
         """Execute replay ECHP at the scheduled timeslot."""
-        self.used_qubits += 2
+        self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
 
         qubit1 = self._context.hosts[alice_host_id].consume_last_qubit()
         qubit2 = self._context.hosts[bob_host_id].consume_last_qubit()

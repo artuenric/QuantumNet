@@ -17,8 +17,6 @@ class NetworkLayer:
         self._physical_layer = physical_layer
         self.logger = Logger.get_instance()
         self.avg_size_routes = 0  # Initialize average route size
-        self.used_eprs = 0  # Initialize used EPRs counter
-        self.used_qubits = 0  # Initialize used qubits counter
         self.routes_used = {}  # Initialize used routes dictionary
 
     def __str__(self):
@@ -27,15 +25,6 @@ class NetworkLayer:
         Returns:
             str: String representation of the network layer."""
         return 'Network Layer'
-
-    def get_used_eprs(self):
-        """Return the count of EPRs used in the network layer."""
-        self.logger.debug(f"EPRs used in layer {self.__class__.__name__}: {self.used_eprs}")
-        return self.used_eprs
-
-    def get_used_qubits(self):
-        self.logger.debug(f"Qubits used in layer {self.__class__.__name__}: {self.used_qubits}")
-        return self.used_qubits
 
     def short_route_valid(self, Alice: int, Bob: int) -> list:
         """
@@ -190,7 +179,7 @@ class NetworkLayer:
             self._physical_layer.remove_epr_from_channel(epr1, (node1, node2))
             self._physical_layer.remove_epr_from_channel(epr2, (node2, node3))
 
-            self.used_eprs += 1
+            self.logger.log(f'{self.__class__.__name__}: 1 EPR used')
 
             route.pop(1)
         else:

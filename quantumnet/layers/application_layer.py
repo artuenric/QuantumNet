@@ -15,20 +15,9 @@ class ApplicationLayer:
         self._context = context
         self._transport_layer = transport_layer
         self.logger = Logger.get_instance()
-        self.used_qubits = 0
 
     def __str__(self):
         return 'Application Layer'
-
-    def get_used_qubits(self):
-        """
-        Return the number of qubits used in the application layer and log the information.
-
-        Returns:
-            int: Number of qubits used in the application layer.
-        """
-        self.logger.debug(f"Qubits used in layer {self.__class__.__name__}: {self.used_qubits}")
-        return self.used_qubits
 
     def run_app(self, app_name, *args, on_complete=None):
         """
@@ -120,7 +109,7 @@ class ApplicationLayer:
             return
 
         num_qubits = int((num_bits - len(final_key)) * 2)
-        self.used_qubits += num_qubits
+        self.logger.log(f'{self.__class__.__name__}: {num_qubits} qubits used')
         self.logger.log(f'Starting E91 protocol with {num_qubits} qubits.')
 
         # Step 1: Alice prepares the qubits
