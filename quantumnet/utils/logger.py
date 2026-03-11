@@ -1,4 +1,5 @@
 import logging
+from ..exceptions import SingletonError
 
 FORMAT = '%(asctime)s: %(message)s'
 logging.basicConfig(format=FORMAT)
@@ -13,7 +14,7 @@ class Logger(object):
                 self.logger.setLevel(logging.DEBUG)
                 Logger.__instance = self
             else:
-                raise Exception('This is a singleton class')
+                raise SingletonError('This is a singleton class')
 
     def get_instance():
         if Logger.__instance is None:

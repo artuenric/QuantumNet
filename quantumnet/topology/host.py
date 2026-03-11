@@ -61,12 +61,11 @@ class Host():
         Remove and return the last qubit from memory.
 
         Returns:
-            Qubit: Last qubit from memory.
+            Qubit: Last qubit from memory, or None if memory is empty.
         """
-        try:
-            return self.memory.pop()
-        except IndexError:
-            raise Exception('No more qubits in memory.')
+        if not self.memory:
+            return None
+        return self.memory.pop()
 
     def add_connection(self, host_id_for_connection: int):
         """
@@ -77,7 +76,7 @@ class Host():
         """
 
         if type(host_id_for_connection) != int:
-            raise Exception('Value provided for host_id_for_connection must be an integer.')
+            raise TypeError('Value provided for host_id_for_connection must be an integer.')
 
         if host_id_for_connection not in self.connections:
             self.connections.append(host_id_for_connection)

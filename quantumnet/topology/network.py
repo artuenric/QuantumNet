@@ -6,6 +6,7 @@ from ..config import SimulationConfig
 from .host import Host
 from ..control.network_context import NetworkContext
 from ..layers import *
+from ..exceptions import DuplicateHostError, TopologyError
 import random
 import os
 import csv
@@ -143,7 +144,7 @@ class Network():
             self._hosts[host.host_id] = host
             Logger.get_instance().debug(f'Host {host.host_id} added to network hosts.')
         else:
-            raise Exception(f'Host {host.host_id} already exists in network hosts.')
+            raise DuplicateHostError(f'Host {host.host_id} already exists in network hosts.')
 
         # Add node to network graph if it doesn't exist
         if not self._graph.has_node(host.host_id):
@@ -199,13 +200,16 @@ class Network():
 
         Args:
             channel (tuple): Communication channel.
+
+        Returns:
+            Epr: The removed EPR pair, or None if no EPR pairs are available.
         """
         channel = (alice, bob)
         try:
             epr = self._graph.edges[channel]['eprs'].pop(-1)
             return epr
-        except IndexError:
-            raise Exception('No EPR pairs available.')
+        except (IndexError, KeyError):
+            return None
 
     def set_ready_topology(self, topology_name: str, *args: int) -> str:
         """
@@ -220,15 +224,15 @@ class Network():
         # Create the graph for the chosen topology
         if topology_name == 'Grid':
             if len(args) != 2:
-                raise Exception('Grid topology requires two arguments.')
+                raise TopologyError('Grid topology requires two arguments.')
             new_graph = nx.grid_2d_graph(*args)
         elif topology_name == 'Line':
             if len(args) != 1:
-                raise Exception('Line topology requires one argument.')
+                raise TopologyError('Line topology requires one argument.')
             new_graph = nx.path_graph(*args)
         elif topology_name == 'Ring':
             if len(args) != 1:
-                raise Exception('Ring topology requires one argument.')
+                raise TopologyError('Ring topology requires one argument.')
             new_graph = nx.cycle_graph(*args)
         else:
             raise ValueError(f"Unknown topology '{topology_name}'. Available: Grid, Line, Ring.")
