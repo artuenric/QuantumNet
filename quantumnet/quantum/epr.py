@@ -29,6 +29,10 @@ class Epr():
         return self._epr_id
 
     @property
+    def id(self):
+        return self._epr_id
+
+    @property
     def initial_fidelity(self) -> float:
         return self._initial_fidelity
 
@@ -60,3 +64,11 @@ class Epr():
         self._base_fidelity = new_fidelity
         if self._clock is not None:
             self._base_timeslot = self._clock.now
+
+    @property
+    def fidelity(self) -> float:
+        return self.current_fidelity
+
+    @fidelity.setter
+    def fidelity(self, value: float):
+        self.current_fidelity = value
