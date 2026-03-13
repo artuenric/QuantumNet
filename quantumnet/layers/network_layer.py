@@ -153,7 +153,7 @@ class NetworkLayer:
             fidelity1 = epr1.current_fidelity
             fidelity2 = epr2.current_fidelity
 
-            success_prob = fidelity1 * fidelity2 + (1 - fidelity1) * (1 - fidelity2)
+            success_prob = fidelity1 * fidelity2
 
             if uniform(0, 1) > success_prob:
                 self.logger.log(f'Entanglement Swapping failed between {node1}-{node2} and {node2}-{node3}')
@@ -161,7 +161,7 @@ class NetworkLayer:
                     on_complete(success=False)
                 return
 
-            new_fidelity = (fidelity1 * fidelity2) / ((fidelity1 * fidelity2) + (1 - fidelity1) * (1 - fidelity2))
+            new_fidelity = fidelity1 * fidelity2
             epr_virtual = Epr(
                 (node1, node3), new_fidelity,
                 clock=self._context.clock,
