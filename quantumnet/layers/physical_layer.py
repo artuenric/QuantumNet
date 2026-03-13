@@ -91,8 +91,6 @@ class PhysicalLayer:
         )
         self._context.hosts[host_id].add_qubit(qubit)
 
-        self._context.register_qubit_creation(qubit_id, "Physical Layer")
-
         self._context.clock.emit('qubit_created', host_id=host_id, qubit_id=qubit_id)
         self.logger.debug(f'Qubit {qubit_id} created with initial fidelity {qubit.initial_fidelity} and added to memory of Host {host_id}.')
 

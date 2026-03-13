@@ -7,12 +7,11 @@ class NetworkContext:
     so changes made by layers are immediately visible.
     """
 
-    def __init__(self, clock, graph, hosts, qubit_timeslots, config):
+    def __init__(self, clock, graph, hosts, config):
         self.clock = clock
         self.graph = graph
         self.hosts = hosts
         self.config = config
-        self._qubit_timeslots = qubit_timeslots
         self._next_qubit_id = 0
 
     def get_host(self, host_id):
@@ -28,10 +27,3 @@ class NetworkContext:
     def get_eprs_from_edge(self, alice, bob):
         """Return the list of EPRs for a specific edge."""
         return self.graph.edges[(alice, bob)]['eprs']
-
-    def register_qubit_creation(self, qubit_id, layer_name):
-        """Record the creation of a qubit in the current timeslot."""
-        self._qubit_timeslots[qubit_id] = {
-            'timeslot': self.clock.now,
-            'layer': layer_name,
-        }

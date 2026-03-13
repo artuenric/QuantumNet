@@ -16,8 +16,6 @@ class NetworkLayer:
         self._context = context
         self._physical_layer = physical_layer
         self.logger = Logger.get_instance()
-        self.avg_size_routes = 0  # Initialize average route size
-        self.routes_used = {}  # Initialize used routes dictionary
 
     def __str__(self):
         """ Return the string representation of the network layer.
@@ -66,11 +64,9 @@ class NetworkLayer:
 
             if valid_path:
                 self.logger.log(f'Valid route found: {path}')
-
-                # Store the route if it's the first time it's used
-                if (alice, bob) not in self.routes_used:
-                    self.routes_used[(alice, bob)] = path.copy()
-
+                self._context.clock.emit(
+                    'route_found', alice=alice, bob=bob, route_len=len(path) - 1
+                )
                 return path
 
         self.logger.log('No valid route found.')
@@ -187,27 +183,3 @@ class NetworkLayer:
 
         # Continue to next swap
         self._swap_next(route, alice, bob, on_complete)
-
-    def get_avg_size_routes(self):
-        """
-        Calculate the average size of used routes, considering the number of hops (edges) between nodes.
-
-        Returns:
-            float: Average size of used routes.
-        """
-        total_size = 0
-        num_routes = 0
-
-        # Iterate over routes stored in the dictionary
-        for route in self.routes_used.values():
-            total_size += len(route) - 1  # Sum the number of edges (hops), which is number of nodes minus 1
-            num_routes += 1  # Count the number of routes
-
-        # Calculate the average if there are valid routes
-        if num_routes > 0:
-            self.avg_size_routes = total_size / num_routes
-        else:
-            # Return 0 if there are no valid routes
-            self.avg_size_routes = 0.0
-
-        return self.avg_size_routes

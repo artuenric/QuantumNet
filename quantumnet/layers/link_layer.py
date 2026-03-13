@@ -15,15 +15,8 @@ class LinkLayer:
         """
         self._context = context
         self._physical_layer = physical_layer
-        self._requests = []
         self._failed_request_count = 0
         self.logger = Logger.get_instance()
-        self._epr_fidelity_sum = 0.0
-        self._epr_count = 0
-
-    @property
-    def requests(self):
-        return self._requests
 
     @property
     def failed_request_count(self):
@@ -85,13 +78,9 @@ class LinkLayer:
             if success:
                 self.logger.log(f'{self.__class__.__name__}: 1 EPR used')
                 self.logger.log(f'{self.__class__.__name__}: 2 qubits used')
-                self._requests.append((alice_id, bob_id))
-                if epr_fidelity is not None:
-                    self._epr_fidelity_sum += epr_fidelity
-                    self._epr_count += 1
                 self.logger.log(f'Timeslot {self._context.clock.now}: Entanglement created between {alice_id} and {bob_id} on attempt {attempt}.')
                 self._context.clock.emit('link_request_success',
-                                          alice=alice_id, bob=bob_id)
+                                          alice=alice_id, bob=bob_id, fidelity=epr_fidelity)
                 if on_complete is not None:
                     on_complete(success=True)
             else:
@@ -203,19 +192,3 @@ class LinkLayer:
         if on_complete is not None:
             on_complete(success=success)
 
-    def avg_fidelity_on_linklayer(self):
-        """
-        Calculate the average fidelity of EPRs created in the link layer.
-
-        Returns:
-            float: Average fidelity of link layer EPRs.
-        """
-        if self._epr_count == 0:
-            self.logger.log('No EPRs created in the link layer.')
-            return 0
-
-        self.logger.debug(f'Total EPRs created in the link layer: {self._epr_count}')
-        self.logger.debug(f'Total fidelity of EPRs created in the link layer: {self._epr_fidelity_sum}')
-        avg_fidelity = self._epr_fidelity_sum / self._epr_count
-        self.logger.log(f'The average fidelity of EPRs created in the link layer is {avg_fidelity}')
-        return avg_fidelity

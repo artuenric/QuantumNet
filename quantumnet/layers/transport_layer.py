@@ -1,8 +1,4 @@
-import networkx as nx
-from ..topology import Host
 from ..utils import Logger
-from ..quantum import Epr
-from random import uniform
 
 class TransportLayer:
     def __init__(self, context, network_layer, physical_layer):
@@ -18,7 +14,6 @@ class TransportLayer:
         self._physical_layer = physical_layer
         self._network_layer = network_layer
         self.logger = Logger.get_instance()
-        self.transmitted_qubits = []
 
     def __str__(self):
         """ Return the string representation of the transport layer.
@@ -26,43 +21,6 @@ class TransportLayer:
         Returns:
             str: String representation of the transport layer."""
         return f'Transport Layer'
-
-    def avg_fidelity_on_transportlayer(self):
-        """
-        Calculate the average fidelity of all qubits actually used in the transport layer.
-
-        Returns:
-            float: Average fidelity of qubits used in the transport layer.
-        """
-        total_fidelity = 0
-        total_qubits_used = 0
-
-        # Calculate the fidelity of transmitted qubits registered in the transmitted qubits log
-        for qubit_info in self.transmitted_qubits:
-            fidelity = qubit_info['F_final']
-            total_fidelity += fidelity
-            total_qubits_used += 1
-            self.logger.log(f'Fidelity of qubit used from {qubit_info["alice_id"]} to {qubit_info["bob_id"]}: {fidelity}')
-
-        # Only consider effectively transmitted qubits (not qubits remaining in host memory)
-        if total_qubits_used == 0:
-            self.logger.log('No qubits were used in the transport layer.')
-            return 0.0
-
-        avg_fidelity = total_fidelity / total_qubits_used
-        self.logger.log(f'The average fidelity of all qubits used in the transport layer is {avg_fidelity}')
-
-        return avg_fidelity
-
-
-    def get_teleported_qubits(self):
-        """
-        Return the list of teleported qubits.
-
-        Returns:
-            list: List of dictionaries containing teleported qubit information.
-        """
-        return self.transmitted_qubits
 
     def run_transport_layer(self, alice_id: int, bob_id: int, num_qubits: int, on_complete=None):
         """
@@ -170,29 +128,21 @@ class TransportLayer:
                     f_alice = qubit_alice.current_fidelity
                     F_final = f_alice * f_route
 
-                    # Store transmitted qubit information
-                    qubit_info = {
-                        'alice_id': alice_id,
-                        'bob_id': bob_id,
-                        'route': route,
-                        'fidelity_alice': f_alice,
-                        'fidelity_route': f_route,
-                        'F_final': F_final,
-                        'timeslot': self._context.clock.now,
-                        'qubit': qubit_alice
-                    }
-
                     # Add transmitted qubit to Bob's memory
                     qubit_alice.current_fidelity = F_final
                     bob.memory.append(qubit_alice)
 
                     success_count += 1
                     self.logger.log(f'{self.__class__.__name__}: 1 qubit used')
-                    self._context.clock.emit('qubit_teleported', alice=alice_id, bob=bob_id, fidelity=F_final)
+                    self._context.clock.emit(
+                        'qubit_teleported',
+                        alice=alice_id, bob=bob_id,
+                        fidelity=F_final,
+                        fidelity_alice=f_alice,
+                        fidelity_route=f_route,
+                        route_len=len(route) - 1,
+                    )
                     self.logger.log(f'Qubit teleportation from {alice_id} to {bob_id} on route {route} succeeded with final fidelity {F_final}.')
-
-                    # Store transmitted qubit information
-                    self.transmitted_qubits.append(qubit_info)
                 else:
                     self.logger.log(f'Alice does not have enough qubits to continue transmission.')
                     break

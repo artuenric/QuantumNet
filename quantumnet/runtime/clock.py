@@ -19,6 +19,7 @@ class Clock:
         self._event_queue = []   # min-heap: (timeslot, seq, callback, kwargs)
         self._seq = 0            # FIFO tie-breaker for same-timeslot events
         self._event_callbacks = {}
+        self._wildcard_callbacks = []  # listen_all() subscribers
 
     @property
     def now(self) -> int:
@@ -84,7 +85,7 @@ class Clock:
     def emit(self, event_name: str, **data):
         """
         Record an event in the history at the current timeslot, without advancing time.
-        Fires callbacks registered for the specific event.
+        Fires callbacks registered for the specific event and all wildcard listeners.
 
         Args:
             event_name (str): Event name.
@@ -95,8 +96,11 @@ class Clock:
         if event_name in self._event_callbacks:
             for callback in self._event_callbacks[event_name]:
                 callback(self, **data)
+        for callback in self._wildcard_callbacks:
+            callback(self, event_name, **data)
 
     def on(self, event_name: str, callback):
+
         """
         Register a callback to react to a specific event.
         The callback receives the clock and event data: callback(clock, **data).
@@ -108,3 +112,16 @@ class Clock:
         if event_name not in self._event_callbacks:
             self._event_callbacks[event_name] = []
         self._event_callbacks[event_name].append(callback)
+
+    def listen_all(self, callback):
+        """
+        Register a callback that fires on every emitted event.
+        Signature: callback(clock, event_name, **data).
+
+        Unlike on(), this callback receives the event name explicitly
+        as a positional argument so a single handler can process all events.
+
+        Args:
+            callback: Function with signature callback(clock, event_name, **data).
+        """
+        self._wildcard_callbacks.append(callback)

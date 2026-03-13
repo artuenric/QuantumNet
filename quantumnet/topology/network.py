@@ -8,8 +8,6 @@ from ..control.network_context import NetworkContext
 from ..layers import *
 from ..exceptions import DuplicateHostError, TopologyError
 import random
-import os
-import csv
 
 class Network():
     """
@@ -25,9 +23,8 @@ class Network():
         self._hosts = {}
         # Execution
         self.logger = Logger.get_instance()
-        self.qubit_timeslots = {}  # Dictionary to store created qubits and their timeslots
         # Shared context between layers (without Network reference)
-        self._context = NetworkContext(self.clock, self._graph, self._hosts, self.qubit_timeslots, self.config)
+        self._context = NetworkContext(self.clock, self._graph, self._hosts, self.config)
         # Layers
         self._physical = PhysicalLayer(self._context)
         self._link = LinkLayer(self._context, self._physical)
@@ -299,74 +296,3 @@ class Network():
             int: Current network timeslot.
         """
         return self.clock.now
-
-    def register_qubit_creation(self, qubit_id, layer_name):
-        """
-        Register the creation of a qubit at the current clock timeslot.
-
-        Args:
-            qubit_id (int): ID of the created qubit.
-            layer_name (str): Name of the layer that created the qubit.
-        """
-        self._context.register_qubit_creation(qubit_id, layer_name)
-
-    def display_all_qubit_timeslots(self):
-        """
-        Display the timeslot of all qubits created across different network layers.
-        If no qubit was created, displays an appropriate message.
-        """
-        if not self.qubit_timeslots:
-            self.logger.log("No qubits were created.")
-        else:
-            for qubit_id, info in self.qubit_timeslots.items():
-                self.logger.log(f"Qubit {qubit_id} was created at timeslot {info['timeslot']} in layer {info['layer']}")
-
-
-    def get_metrics(self, metrics_requested=None, output_type="csv", file_name="metrics_output.csv"):
-            """
-            Retrieve network metrics as requested and export, print, or store them.
-
-            Args:
-                metrics_requested: List of metrics to return (optional).
-                                If None, all metrics will be included.
-                output_type: Specifies how metrics should be returned.
-                            "csv" to export as CSV file (default),
-                            "print" to display on console,
-                            "variable" to return metrics as a variable.
-                file_name: CSV file name (used only when output_type="csv").
-
-            Returns:
-                If output_type is "variable", returns a dictionary with the requested metrics.
-            """
-            # Dictionary with all available metrics
-            available_metrics = {
-                "Total Timeslot": self.get_timeslot(),
-                "Transport Layer Fidelity": self.transportlayer.avg_fidelity_on_transportlayer(),
-                "Link Layer Fidelity": self.linklayer.avg_fidelity_on_linklayer(),
-                "Average Routes": self.networklayer.get_avg_size_routes()
-            }
-
-            # If no specific metrics were requested, use all
-            if metrics_requested is None:
-                metrics_requested = available_metrics.keys()
-
-            # Filter requested metrics
-            metrics = {metric: available_metrics[metric] for metric in metrics_requested if metric in available_metrics}
-
-            # Handle output based on requested type
-            if output_type == "print":
-                for metric, value in metrics.items():
-                    self.logger.log(f"{metric}: {value}")
-            elif output_type == "csv":
-                current_directory = os.getcwd()
-                file_path = os.path.join(current_directory, file_name)
-                with open(file_path, mode='w', newline='') as file:
-                    writer = csv.writer(file)
-                    writer.writerow(['Metric', 'Value'])
-                    for metric, value in metrics.items():
-                        writer.writerow([metric, value])
-                self.logger.log(f"Metrics successfully exported to {file_path}")
-            elif output_type == "variable":
-                return metrics
-            else:
-                raise ValueError("Invalid output type. Choose between 'print', 'csv', or 'variable'.")
