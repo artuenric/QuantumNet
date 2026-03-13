@@ -55,14 +55,5 @@ QuantumNet/
 │   └── utils/
 │       ├── logger.py           # Logger (desabilitado por padrão)
 │       └── metrics.py          # MetricsCollector (saída em CSV)
-└── docs/
-    ├── topology.ipynb
-    ├── physical_layer.ipynb
-    ├── link_layer.ipynb
-    ├── network_layer.ipynb
-    ├── transport_layer.ipynb
-    ├── application_layer.ipynb
-    ├── simulation.ipynb
-    ├── controller.ipynb
-    └── clock_ticks.md
+└── docs/                       # Documentação e exemplos do Repositório
 ```
