@@ -28,7 +28,7 @@ class Network():
         # Layers
         self._physical = PhysicalLayer(self._context)
         self._link = LinkLayer(self._context, self._physical)
-        self._network = NetworkLayer(self._context, self._physical)
+        self._network = NetworkLayer(self._context, self._physical, self._link)
         self._transport = TransportLayer(self._context, self._network, self._physical)
         self._application = ApplicationLayer(self._context, self._transport)
 

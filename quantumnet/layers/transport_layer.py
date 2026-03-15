@@ -159,3 +159,41 @@ class TransportLayer:
             self.logger.log(f'Failed to transmit {num_qubits} qubits between {alice_id} and {bob_id}. Only {success_count} qubits were transmitted successfully. Timeslot: {self._context.clock.now}')
             if on_complete is not None:
                 on_complete(success=False)
+
+    def request_epr_pairs(self, alice_id, bob_id, num_pairs, on_complete=None):
+        """
+        Request end-to-end entangled pairs between alice and bob. Fire-and-forget.
+
+        Delegates to the network layer, which creates EPR pairs hop-by-hop
+        via the link layer and performs entanglement swapping if needed.
+
+        Result communicated via on_complete(success=bool, count=int) callback if provided.
+
+        Args:
+            alice_id (int): Alice host ID.
+            bob_id (int): Bob host ID.
+            num_pairs (int): Number of end-to-end EPR pairs to establish.
+            on_complete: Optional callback(success=bool, count=int).
+        """
+        self.logger.log(f'Requesting {num_pairs} end-to-end EPR pairs between {alice_id} and {bob_id}.')
+        self._epr_request_loop(alice_id, bob_id, num_pairs, 0, on_complete)
+
+    def _epr_request_loop(self, alice_id, bob_id, num_pairs, created, on_complete):
+        """Create end-to-end EPR pairs one by one via the network layer."""
+        if created >= num_pairs:
+            self._context.clock.emit('epr_request_complete', alice=alice_id, bob=bob_id, count=created)
+            self.logger.log(f'{created} end-to-end EPR pairs established between {alice_id} and {bob_id}.')
+            if on_complete is not None:
+                on_complete(success=True, count=created)
+            return
+
+        def on_entanglement_done(success):
+            if success:
+                self._epr_request_loop(alice_id, bob_id, num_pairs, created + 1, on_complete)
+            else:
+                self._context.clock.emit('epr_request_failed', alice=alice_id, bob=bob_id, created=created, requested=num_pairs)
+                self.logger.log(f'Failed to establish EPR pair {created + 1}/{num_pairs} between {alice_id} and {bob_id}.')
+                if on_complete is not None:
+                    on_complete(success=False, count=created)
+
+        self._network_layer.request_entanglement(alice_id, bob_id, on_complete=on_entanglement_done)

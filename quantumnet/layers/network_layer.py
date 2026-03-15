@@ -5,16 +5,18 @@ from ..quantum import Epr
 from random import uniform
 
 class NetworkLayer:
-    def __init__(self, context, physical_layer):
+    def __init__(self, context, physical_layer, link_layer):
         """
         Initialize the network layer.
 
         Args:
             context (NetworkContext): Shared network context.
             physical_layer (PhysicalLayer): Physical layer.
+            link_layer (LinkLayer): Link layer.
         """
         self._context = context
         self._physical_layer = physical_layer
+        self._link_layer = link_layer
         self.logger = Logger.get_instance()
 
     def __str__(self):
@@ -183,3 +185,61 @@ class NetworkLayer:
 
         # Continue to next swap
         self._swap_next(route, alice, bob, on_complete)
+
+    def request_entanglement(self, alice, bob, on_complete=None):
+        """
+        Establish one end-to-end entangled pair between alice and bob. Fire-and-forget.
+
+        For adjacent nodes, delegates a single request to the link layer.
+        For non-adjacent nodes, creates EPR pairs on each hop via the link layer,
+        then performs entanglement swapping to produce an end-to-end pair.
+
+        Result communicated via on_complete(success=bool) callback if provided.
+
+        Args:
+            alice (int): Source host ID.
+            bob (int): Destination host ID.
+            on_complete: Optional callback(success=bool).
+        """
+        try:
+            route = list(nx.shortest_path(self._context.graph, alice, bob))
+        except nx.NetworkXNoPath:
+            self.logger.log(f'No path between {alice} and {bob}.')
+            if on_complete is not None:
+                on_complete(success=False)
+            return
+
+        if len(route) < 2:
+            self.logger.log(f'Invalid route between {alice} and {bob}.')
+            if on_complete is not None:
+                on_complete(success=False)
+            return
+
+        self.logger.log(f'Requesting entanglement between {alice} and {bob} along route {route}.')
+        self._create_eprs_along_route(route, 0, alice, bob, on_complete)
+
+    def _create_eprs_along_route(self, route, hop_index, alice, bob, on_complete):
+        """Create an EPR pair on the next hop of the route, then continue or swap."""
+        if hop_index >= len(route) - 1:
+            # All hops covered
+            if len(route) > 2:
+                # Multi-hop: entanglement swapping to get end-to-end pair
+                self.entanglement_swapping(alice, bob, on_complete=on_complete)
+            else:
+                # Single hop: EPR pair already on the edge
+                if on_complete is not None:
+                    on_complete(success=True)
+            return
+
+        node1 = route[hop_index]
+        node2 = route[hop_index + 1]
+
+        def on_link_done(success):
+            if success:
+                self._create_eprs_along_route(route, hop_index + 1, alice, bob, on_complete)
+            else:
+                self.logger.log(f'Failed to create EPR pair between {node1} and {node2}.')
+                if on_complete is not None:
+                    on_complete(success=False)
+
+        self._link_layer.request(node1, node2, on_complete=on_link_done)

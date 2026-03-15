@@ -54,6 +54,7 @@ class CostsConfig:
     swapping: int = 1
     qubit_creation: int = 1
     e91_round: int = 1
+    nepr_measurement: int = 1
 
 
 @dataclass
