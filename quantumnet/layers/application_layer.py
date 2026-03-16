@@ -170,7 +170,7 @@ class ApplicationLayer:
 
     # ── NEPR Protocol ──────────────────────────────────────────────
 
-    def nepr_protocol(self, alice_id, bob_id, num_pairs, on_complete=None):
+    def nepr_protocol(self, alice_id, bob_id, num_pairs, high_fidelity=True, on_complete=None):
         """
         Schedule the NEPR protocol. Fire-and-forget.
 
@@ -185,9 +185,12 @@ class ApplicationLayer:
             alice_id (int): Alice host ID.
             bob_id (int): Bob host ID.
             num_pairs (int): Number of EPR pairs to request.
+            high_fidelity (bool): If True (default), only accept EPR pairs above the
+                fidelity threshold and attempt purification on failure. If False,
+                accept any successfully created EPR pair regardless of fidelity.
             on_complete: Optional callback(success=bool, measurements=list or None).
         """
-        self.logger.log(f'Starting NEPR protocol: {num_pairs} EPR pairs between {alice_id} and {bob_id}.')
+        self.logger.log(f'Starting NEPR protocol: {num_pairs} EPR pairs between {alice_id} and {bob_id} (high_fidelity={high_fidelity}).')
 
         def on_epr_done(success, count=0):
             if success:
@@ -206,7 +209,7 @@ class ApplicationLayer:
                 if on_complete is not None:
                     on_complete(success=False, measurements=None)
 
-        self._transport_layer.request_epr_pairs(alice_id, bob_id, num_pairs, on_complete=on_epr_done)
+        self._transport_layer.request_epr_pairs(alice_id, bob_id, num_pairs, high_fidelity=high_fidelity, on_complete=on_epr_done)
 
     def _nepr_measure(self, alice_id, bob_id, num_pairs, on_complete):
         """Consume and measure EPR pairs at the scheduled timeslot."""
