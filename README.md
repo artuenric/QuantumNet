@@ -1,19 +1,67 @@
-# QuantumNet
+﻿# Título projeto
 
-**QuantumNet** é um simulador de redes quânticas escrito em Python. O projeto é organizado em camadas: física, enlace, rede, transporte e aplicação, seguindo o modelo de pilha de protocolos quânticos. Cada camada é independente e pode ser usada separadamente, tornando o simulador modular e extensível para experimentação com diferentes protocolos e topologias.
+## QuantumNet: Um Simulador de Redes Quânticas Baseado em Camadas
 
-## Requisitos
+As redes quânticas são fundamentais para a futura Internet Quântica, mas sua implementação prática ainda enfrenta restrições físicas e operacionais que dificultam a avaliação de protocolos em ambientes reais. Nesse contexto, simuladores tornam-se ferramentas essenciais para investigar arquiteturas, mecanismos de comunicação e aplicações de forma controlada e reprodutível.
 
-- **Python** 3.10
-- Dependências listadas em `requirements.txt`
-- Dependências extras de notebook em `requirements-notebook.txt`
+Este artefato apresenta o **QuantumNet**, um simulador de redes quânticas de código aberto orientado a eventos discretos. A ferramenta adota uma arquitetura explícita em camadas inspirada em modelos clássicos de rede, oferecendo um ambiente flexível para desenvolvimento, customização e avaliação de protocolos e algoritmos em diferentes níveis da pilha de comunicação.
+
+# Estrutura do readme.md
+
+Este README está organizado da seguinte forma:
+
+1. Título do projeto e resumo do artigo/artefato.
+2. Selos considerados no processo de avaliação.
+3. Informações básicas do ambiente e requisitos.
+4. Dependências e recursos de terceiros.
+5. Preocupações com segurança.
+6. Instalação (Docker e local).
+7. Teste mínimo de funcionamento.
+8. Experimentos para reprodução das reivindicações.
+9. Licença.
+
+# Selos Considerados
+
+Os selos considerados são: **Artefatos Disponíveis (SeloD), Artefatos Funcionais (SeloF), Artefatos Sustentáveis (SeloS) e Experimentos Reprodutíveis (SeloR)**.
+
+# Informações básicas
+
+Esta seção apresenta os componentes necessários para execução e replicação dos experimentos.
+
+- Sistema operacional: Linux, macOS ou Windows.
+- Linguagem: Python 3.10.
+- Containerização (opcional, recomendada): Docker + Docker Compose.
+- Recursos mínimos sugeridos: 1 vCPU, 2 GB de RAM, ~2 GB de espaço livre em disco para instalação e execução de testes básicos.
+
+# Dependências
+
+Informações relacionadas a dependências e recursos necessários para execução:
+
+- **Python** 3.10.
+- Dependências principais em `requirements.txt`.
+- Dependências extras para notebooks em `requirements-notebook.txt`.
+- Benchmarks e scripts de experimento devem ser executados a partir dos módulos e exemplos do repositório.
+
+# Preocupações com segurança
+
+A execução do artefato **não** envolve manipulação de dados sensíveis, elevação de privilégios de sistema ou acesso obrigatório a serviços externos críticos.
+
+Cuidados recomendados:
+
+- Execute em ambiente isolado (virtualenv ou Docker).
+- Revise scripts próprios antes de executar.
+- Não exponha serviços de notebook em rede pública sem autenticação.
+
+# Instalação
+
+Ao final desta seção, a ferramenta estará pronta para execução.
 
 ## Execução com Docker
 
 ### Pré-requisitos
 
-- [Docker](https://docs.docker.com/get-docker/) instalado
-- [Docker Compose](https://docs.docker.com/compose/install/) instalado (já incluso no Docker Desktop)
+- [Docker](https://docs.docker.com/get-docker/) instalado.
+- [Docker Compose](https://docs.docker.com/compose/install/) instalado (já incluso no Docker Desktop).
 
 ### Passo a passo
 
@@ -30,19 +78,19 @@ cd QuantumNet
 docker compose build
 ```
 
-3. Para iniciar o container com um shell interativo Python:
+3. Inicie o container com shell Python interativo:
 
 ```bash
 docker compose run --rm quantumnet
 ```
 
-4. Para abrir um terminal bash dentro do container (útil para rodar scripts):
+4. Para abrir terminal bash no container:
 
 ```bash
 docker compose run --rm quantumnet bash
 ```
 
-5. Dentro do container, execute seus scripts normalmente:
+5. Dentro do container, execute scripts:
 
 ```bash
 python3 seu_script.py
@@ -56,13 +104,13 @@ python3 seu_script.py
 docker compose build quantumnet-notebook
 ```
 
-2. Inicie o serviço de notebook:
+2. Inicie o serviço:
 
 ```bash
 docker compose up quantumnet-notebook
 ```
 
-3. Abra no navegador:
+3. Acesse no navegador:
 
 ```text
 http://localhost:8888
@@ -76,41 +124,22 @@ docker compose down
 
 ### Reconstruir a imagem
 
-Se alterar o `requirements.txt`, o `requirements-notebook.txt`, o `Dockerfile` ou o `Dockerfile.notebook`, reconstrua a imagem:
+Se alterar `requirements.txt`, `requirements-notebook.txt`, `Dockerfile` ou `Dockerfile.notebook`:
 
 ```bash
 docker compose build --no-cache
 ```
 
-### Desinstalação e limpeza
-
-Para remover completamente o ambiente Docker do projeto:
-
-```bash
-# Parar e remover containers em execução
-docker compose down
-
-# Remover a imagem do QuantumNet
-docker rmi quantumnet-quantumnet
-
-# (Opcional) Limpeza geral do Docker - remove imagens não utilizadas
-docker system prune -a
-```
-
-> **Atenção:** O comando `docker system prune -a` remove **todas** as imagens, containers e redes não utilizados do Docker, não apenas do QuantumNet. Use com cuidado se tiver outros projetos Docker.
-
 ## Alternativa: execução local com Python 3.10
-
-Se preferir não usar Docker, basta ter o Python 3.10 instalado na sua máquina.
 
 1. Clone o repositório:
 
 ```bash
-git https://github.com/quantumgercom/QuantumNet.git
+git clone https://github.com/quantumgercom/QuantumNet.git
 cd QuantumNet
 ```
 
-2. (Opcional) Crie e ative um ambiente virtual:
+2. (Opcional) Crie e ative ambiente virtual:
 
 ```bash
 python3.10 -m venv venv
@@ -125,35 +154,15 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
-4. Execute seus scripts:
+4. Execute scripts:
 
 ```bash
 python3 seu_script.py
 ```
 
-### Desinstalação (instalação local)
+# Teste mínimo
 
-Para remover completamente o ambiente virtual e as dependências:
-
-```bash
-# Desative o ambiente virtual (se estiver ativado)
-deactivate
-
-# Remova o diretório do ambiente virtual
-rm -rf venv  # Linux/macOS
-# ou
-rd /s venv   # Windows
-
-# (Opcional) Remova o repositório completo
-cd ..
-rm -rf QuantumNet  # Linux/macOS
-# ou
-rd /s QuantumNet   # Windows
-```
-
-## Teste rápido
-
-Após instalar as dependências, execute o trecho abaixo para verificar se o simulador está funcionando corretamente:
+Esta seção apresenta um passo a passo para validar a instalação e execução básica.
 
 ```python
 from quantumnet.runtime import Clock
@@ -186,7 +195,7 @@ assert 'success' in resultado, "O callback da camada de enlace deveria ter sido 
 print("Todos os testes passaram! O simulador está funcionando.")
 ```
 
-Salve o trecho acima como `teste_rapido.py` e execute:
+Salve como `teste_rapido.py` e execute:
 
 ```bash
 # Localmente
@@ -196,39 +205,101 @@ python3 teste_rapido.py
 docker compose run --rm quantumnet python3 teste_rapido.py
 ```
 
-> **Nota:** o comando `docker compose run --rm quantumnet` (sem argumentos extras) abre o interpretador interativo do Python (`>>>`). Para rodar um script, passe o comando diretamente como mostrado acima. Se já estiver dentro do `>>>`, cole o código Python diretamente no terminal.
+# Experimentos
 
-## Estrutura do projeto
+Esta seção descreve como reproduzir, a partir do artefato disponibilizado, as principais reivindicações associadas ao artigo.
 
+## Reivindicação #1 — Execução da arquitetura em camadas do simulador
+
+Esta reivindicação demonstra que o QuantumNet permite a execução de mecanismos distribuídos em diferentes níveis de uma arquitetura explícita em camadas, conforme a proposta central do artigo.
+
+Notebook correspondente: `examples/demo_camadas.ipynb`.
+
+Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de **Instalação** ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
+
+### Passo a passo para rodar no Jupyter
+
+1. Inicie o Jupyter:
+```bash
+# Docker
+docker compose up quantumnet-notebook
+
+# Local
+jupyter notebook
 ```
-QuantumNet/
-├── Dockerfile
-├── Dockerfile.notebook
-├── requirements.txt
-├── requirements-notebook.txt
-├── quantumnet/
-│   ├── config.py               # Configurações globais da simulação
-│   ├── exceptions.py           # Exceções customizadas
-│   ├── control/
-│   │   ├── controller.py       # Controlador central da simulação
-│   │   └── network_context.py  # Estado compartilhado entre camadas
-│   ├── layers/
-│   │   ├── physical_layer.py
-│   │   ├── link_layer.py
-│   │   ├── network_layer.py
-│   │   ├── transport_layer.py
-│   │   └── application_layer.py
-│   ├── quantum/
-│   │   ├── qubit.py            # Representação de qubits
-│   │   └── epr.py              # Pares EPR
-│   ├── runtime/
-│   │   ├── clock.py            # Relógio de eventos discretos
-│   │   └── simulation.py       # Utilitários de execução
-│   ├── topology/
-│   │   ├── host.py             # Nó da rede
-│   │   └── network.py          # Classe principal da rede
-│   └── utils/
-│       ├── logger.py           # Logger (desabilitado por padrão)
-│       └── metrics.py          # MetricsCollector (saída em CSV)
-└── docs/                       # Documentação e exemplos do Repositório
+2. Abra o notebook ``examples/demo_camadas.ipynb.``
+
+3. Execute todas as células em sequência (Run All).
+
+4. Aguarde o término completo das execuções.
+
+5. Verifique as saídas geradas no próprio notebook.
+
+Tempo esperado: 1 a 10 minutos, dependendo da topologia e da quantidade de operações executadas.
+Recursos esperados: aproximadamente 1 GB de RAM e baixo uso de disco.
+Resultado esperado: execução bem-sucedida do fluxo demonstrativo do simulador, com geração de logs, métricas e saídas compatíveis com operações em diferentes camadas da pilha de comunicação.
+
+## Reivindicação #2 — Reprodução do agendamento de purificação na camada de enlace
+
+Esta reivindicação demonstra que o artefato permite reproduzir um cenário de purificação em canal ruidoso, evidenciando o comportamento do agendamento híbrido e seu efeito sobre a continuidade do processo e a fidelidade final do enlace.
+
+Notebook correspondente: ``examples/demo_purification.ipynb.``
+
+Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de Instalação ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
+
+Passo a passo para rodar no Jupyter
+
+1. Inicie o Jupyter:
 ```
+# Docker
+docker compose up quantumnet-notebook
+
+# Local
+jupyter notebook
+```
+2. Abra o notebook ``examples/demo_purification.ipynb.``
+
+3. Execute todas as células em sequência (Run All).
+
+4. Aguarde o término completo das execuções.
+
+5. Analise a saída textual final produzida pelo notebook.
+
+Tempo esperado: 5 a 30 minutos, conforme o tamanho do cenário e o número de repetições.
+Recursos esperados: 1 a 2 GB de RAM e baixo uso de disco para logs e arquivos auxiliares.
+Resultado esperado: saída textual detalhando o processo de purificação, incluindo provisionamento inicial, falhas probabilísticas, tentativas de recuperação e conclusão bem-sucedida do agendamento híbrido, com fidelidade final compatível com o cenário configurado.
+
+## Reivindicação #3 — Reprodução do cenário de ataque a repetidores quânticos
+
+Esta reivindicação demonstra que o artefato permite reproduzir um cenário de ataque do tipo black hole repeater, evidenciando o impacto de um repetidor malicioso sobre a taxa de sucesso da comunicação quântica.
+
+Notebook correspondente: ``examples/demo_attack.ipynb.``
+
+Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de Instalação ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
+
+Passo a passo para rodar no Jupyter
+
+1 Inicie o Jupyter:
+```
+# Docker
+docker compose up quantumnet-notebook
+
+# Local
+jupyter notebook
+```
+2. Abra o notebook ``examples/demo_attack.ipynb.``
+
+3. Execute todas as células em sequência (Run All).
+
+4. Aguarde o término completo das execuções.
+
+5. Verifique os gráficos e métricas gerados ao final da execução.
+
+Tempo esperado: 5 a 20 minutos, conforme os parâmetros do cenário.
+Recursos esperados: 1 a 2 GB de RAM e baixo uso de disco para saídas do experimento.
+Resultado esperado: geração de visualizações comparativas mostrando a diferença entre a rede íntegra e a rede com repetidor malicioso, bem como a degradação da taxa de sucesso à medida que aumenta a intensidade do ataque.
+
+
+# LICENSE
+
+Este projeto está licenciado sob os termos descritos no arquivo `LICENSE` do repositório.
