@@ -35,6 +35,7 @@ class ProtocolConfig:
     link_max_attempts: int = 10
     link_purification_after_failures: int = 2
     transport_max_attempts: int = 2
+    entanglement_max_attempts: int = 5
 
 
 @dataclass
