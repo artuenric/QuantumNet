@@ -32,9 +32,10 @@ class ProbabilityConfig:
 @dataclass
 class ProtocolConfig:
     """Communication protocol parameters."""
-    link_max_attempts: int = 2
+    link_max_attempts: int = 10
     link_purification_after_failures: int = 2
     transport_max_attempts: int = 2
+    entanglement_max_attempts: int = 5
 
 
 @dataclass
@@ -42,6 +43,9 @@ class DefaultsConfig:
     """Default network initialization values."""
     qubits_per_host: int = 10
     eprs_per_channel: int = 10
+    qubit_regen_interval: int = 0   # ticks between regeneration cycles (0 = disabled)
+    qubit_regen_amount: int = 3     # qubits added per host per cycle
+    channel_noise_type: str = 'random'  # 'bit-flip', 'werner', 'bitflip+werner', or 'random' (assigns one at random per channel)
 
 
 @dataclass
@@ -54,6 +58,7 @@ class CostsConfig:
     swapping: int = 1
     qubit_creation: int = 1
     e91_round: int = 1
+    nepr_measurement: int = 1
 
 
 @dataclass

@@ -28,7 +28,7 @@ class Network():
         # Layers
         self._physical = PhysicalLayer(self._context)
         self._link = LinkLayer(self._context, self._physical)
-        self._network = NetworkLayer(self._context, self._physical)
+        self._network = NetworkLayer(self._context, self._physical, self._link)
         self._transport = TransportLayer(self._context, self._network, self._physical)
         self._application = ApplicationLayer(self._context, self._transport)
 
@@ -258,6 +258,7 @@ class Network():
         for host_id in self._hosts:
             for i in range(num_qubits):
                 self.physical.create_qubit(host_id, increment_qubits=False)
+        self.physical.start_qubit_regen()
         self.logger.debug("Hosts initialized")
 
     def start_channels(self):
@@ -265,10 +266,15 @@ class Network():
         Initialize network channels.
         """
         prob_cfg = self.config.probability
+        cfg_noise = self.config.defaults.channel_noise_type
+        _noise_types = ['bit-flip', 'werner', 'bitflip+werner']
         for edge in self.edges:
             self._graph.edges[edge]['prob_on_demand_epr_create'] = random.uniform(prob_cfg.epr_create_min, prob_cfg.epr_create_max)
             self._graph.edges[edge]['prob_replay_epr_create'] = random.uniform(prob_cfg.epr_create_min, prob_cfg.epr_create_max)
             self._graph.edges[edge]['eprs'] = list()
+            self._graph.edges[edge]['noise_type'] = (
+                random.choice(_noise_types) if cfg_noise == 'random' else cfg_noise
+            )
         self.logger.debug("Channels initialized")
 
     def start_eprs(self, num_eprs: int = None):
