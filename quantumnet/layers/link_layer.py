@@ -89,6 +89,47 @@ class LinkLayer:
             alice, bob, high_fidelity=high_fidelity, on_complete=on_heralding_done
         )
 
+    def purification(self, alice_id: int, bob_id: int, purification_type: int = 1, on_complete=None):
+        """
+        Purification protocol: consumes two EPR pairs from the channel and
+        replaces them with one higher-fidelity pair.
+
+        Result communicated via:
+          - 'purification_success' or 'purification_failed' event
+          - on_complete(success=True/False) callback if provided
+
+        Args:
+            alice_id (int): Alice host ID.
+            bob_id (int): Bob host ID.
+            purification_type (int): Protocol variant (1=Default, 2=BBPSSW, 3=DEJMPS).
+            on_complete: Optional callback(success=bool).
+        """
+        def _run():
+            eprs = self._context.get_eprs_from_edge(alice_id, bob_id)
+            if len(eprs) < 2:
+                self._context.clock.emit('purification_failed',
+                                          alice=alice_id, bob=bob_id, reason='insufficient_eprs')
+                if on_complete is not None:
+                    on_complete(success=False)
+                return
+
+            epr1, epr2 = eprs[-1], eprs[-2]
+            self._physical_layer.remove_epr_from_channel(epr1, (alice_id, bob_id))
+            self._physical_layer.remove_epr_from_channel(epr2, (alice_id, bob_id))
+
+            f_purified = self.purification_calculator(
+                epr1.current_fidelity, epr2.current_fidelity, purification_type
+            )
+            epr_new = self._physical_layer.create_epr_pair(fidelity=f_purified)
+            self._physical_layer.add_epr_to_channel(epr_new, (alice_id, bob_id))
+
+            self._context.clock.emit('purification_success',
+                                      alice=alice_id, bob=bob_id, fidelity=f_purified)
+            if on_complete is not None:
+                on_complete(success=True)
+
+        self._context.clock.schedule(1, _run)
+
     def purification_calculator(self, f1: float, f2: float, purification_type: int) -> float:
         """
         Purification formula calculation.
@@ -102,16 +143,16 @@ class LinkLayer:
             float: Fidelity after purification.
         """
         f1f2 = f1 * f2
-
+        # Bit-flip
         if purification_type == 1:
             self.logger.log('Purification type 1 was used.')
             return f1f2 / ((f1f2) + ((1 - f1) * (1 - f2)))
-
+        # BBPSSW
         elif purification_type == 2:
             result = (f1f2 + ((1 - f1) / 3) * ((1 - f2) / 3)) / (f1f2 + f1 * ((1 - f2) / 3) + f2 * ((1 - f1) / 3) + 5 * ((1 - f1) / 3) * ((1 - f2) / 3))
             self.logger.log('Purification type 2 was used.')
             return result
-
+        #DEJMPS
         elif purification_type == 3:
             result = (2 * f1f2 + 1 - f1 - f2) / ((1 / 4) * (f1 + f2 - f1f2) + 3 / 4)
             self.logger.log('Purification type 3 was used.')
