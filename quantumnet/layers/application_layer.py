@@ -6,7 +6,7 @@ from ..utils import Logger
 class ApplicationLayer:
     def __init__(self, context, transport_layer):
         """
-        Initialize the QKD (Quantum Key Distribution) application layer.
+        Initialize the application layer.
 
         Args:
             context (NetworkContext): Shared network context.
@@ -31,6 +31,9 @@ class ApplicationLayer:
         if app_name == "QKD_E91":
             alice_id, bob_id, num_qubits = args
             self.qkd_e91_protocol(alice_id, bob_id, num_qubits, on_complete=on_complete)
+        elif app_name == "NEPR":
+            alice_id, bob_id, num_pairs = args
+            self.nepr_protocol(alice_id, bob_id, num_pairs, on_complete=on_complete)
         else:
             self.logger.log(f"Application not executed or not found.")
             if on_complete is not None:
@@ -164,3 +167,70 @@ class ApplicationLayer:
 
         # Continue loop (will check if we have enough bits)
         self._e91_loop(alice_id, bob_id, num_bits, final_key, on_complete)
+
+    # ── NEPR Protocol ──────────────────────────────────────────────
+
+    def nepr_protocol(self, alice_id, bob_id, num_pairs, high_fidelity=True, on_complete=None):
+        """
+        Schedule the NEPR protocol. Fire-and-forget.
+
+        Requests *num_pairs* end-to-end EPR pairs between alice and bob
+        via the transport layer, then measures (consumes) them from the channel.
+
+        Result communicated via:
+          - 'nepr_complete' or 'nepr_failed' event
+          - on_complete(success=bool, measurements=list or None) callback if provided
+
+        Args:
+            alice_id (int): Alice host ID.
+            bob_id (int): Bob host ID.
+            num_pairs (int): Number of EPR pairs to request.
+            high_fidelity (bool): If True (default), only accept EPR pairs above the
+                fidelity threshold and attempt purification on failure. If False,
+                accept any successfully created EPR pair regardless of fidelity.
+            on_complete: Optional callback(success=bool, measurements=list or None).
+        """
+        self.logger.log(f'Starting NEPR protocol: {num_pairs} EPR pairs between {alice_id} and {bob_id} (high_fidelity={high_fidelity}).')
+
+        def on_epr_done(success, count=0):
+            if success:
+                cost = self._context.config.costs.nepr_measurement
+                self._context.clock.schedule(
+                    cost, self._nepr_measure,
+                    alice_id=alice_id, bob_id=bob_id,
+                    num_pairs=num_pairs, on_complete=on_complete
+                )
+            else:
+                self.logger.log(f'NEPR: Failed to establish EPR pairs between {alice_id} and {bob_id}. Created {count}/{num_pairs}.')
+                self._context.clock.emit(
+                    'nepr_failed', alice=alice_id, bob=bob_id,
+                    reason='entanglement_failed', created=count, requested=num_pairs
+                )
+                if on_complete is not None:
+                    on_complete(success=False, measurements=None)
+
+        self._transport_layer.request_epr_pairs(alice_id, bob_id, num_pairs, high_fidelity=high_fidelity, on_complete=on_epr_done)
+
+    def _nepr_measure(self, alice_id, bob_id, num_pairs, on_complete):
+        """Consume and measure EPR pairs at the scheduled timeslot."""
+        eprs = self._context.get_eprs_from_edge(alice_id, bob_id)
+        pairs_to_measure = min(num_pairs, len(eprs))
+
+        measurements = []
+        for _ in range(pairs_to_measure):
+            epr = eprs.pop(0)
+            fidelity = epr.current_fidelity
+            measurements.append(fidelity)
+
+        self.logger.log(
+            f'NEPR: Measured {pairs_to_measure} EPR pairs between {alice_id} and {bob_id}. '
+            f'Fidelities: {[round(f, 4) for f in measurements]}'
+        )
+
+        self._context.clock.emit(
+            'nepr_complete', alice=alice_id, bob=bob_id,
+            num_pairs=pairs_to_measure, measurements=measurements
+        )
+
+        if on_complete is not None:
+            on_complete(success=True, measurements=measurements)

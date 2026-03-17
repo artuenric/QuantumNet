@@ -159,3 +159,52 @@ class TransportLayer:
             self.logger.log(f'Failed to transmit {num_qubits} qubits between {alice_id} and {bob_id}. Only {success_count} qubits were transmitted successfully. Timeslot: {self._context.clock.now}')
             if on_complete is not None:
                 on_complete(success=False)
+
+    def request_epr_pairs(self, alice_id, bob_id, num_pairs, high_fidelity=True, on_complete=None):
+        """
+        Request end-to-end entangled pairs between alice and bob. Fire-and-forget.
+
+        Delegates to the network layer, which creates EPR pairs hop-by-hop
+        via the link layer and performs entanglement swapping if needed.
+
+        Result communicated via on_complete(success=bool, count=int) callback if provided.
+
+        Args:
+            alice_id (int): Alice host ID.
+            bob_id (int): Bob host ID.
+            num_pairs (int): Number of end-to-end EPR pairs to establish.
+            high_fidelity (bool): If True (default), only accept EPR pairs above the
+                fidelity threshold and attempt purification on failure. If False,
+                accept any successfully created EPR pair regardless of fidelity.
+            on_complete: Optional callback(success=bool, count=int).
+        """
+        self.logger.log(f'Requesting {num_pairs} end-to-end EPR pairs between {alice_id} and {bob_id}.')
+        self._epr_request_loop(alice_id, bob_id, num_pairs, 0, high_fidelity, on_complete)
+
+    def _epr_request_loop(self, alice_id, bob_id, num_pairs, created, high_fidelity, on_complete, attempt=0):
+        """Create end-to-end EPR pairs one by one via the network layer."""
+        if created >= num_pairs:
+            self._context.clock.emit('epr_request_complete', alice=alice_id, bob=bob_id, count=created)
+            self.logger.log(f'{created} end-to-end EPR pairs established between {alice_id} and {bob_id}.')
+            if on_complete is not None:
+                on_complete(success=True, count=created)
+            return
+
+        max_attempts = self._context.config.protocol.entanglement_max_attempts
+
+        def on_entanglement_done(success):
+            if success:
+                self._epr_request_loop(alice_id, bob_id, num_pairs, created + 1, high_fidelity, on_complete)
+            elif attempt + 1 < max_attempts:
+                self.logger.log(
+                    f'Entanglement attempt {attempt + 1}/{max_attempts} failed for pair '
+                    f'{created + 1}/{num_pairs} between {alice_id} and {bob_id}. Retrying.'
+                )
+                self._epr_request_loop(alice_id, bob_id, num_pairs, created, high_fidelity, on_complete, attempt + 1)
+            else:
+                self._context.clock.emit('epr_request_failed', alice=alice_id, bob=bob_id, created=created, requested=num_pairs)
+                self.logger.log(f'Failed to establish EPR pair {created + 1}/{num_pairs} between {alice_id} and {bob_id} after {max_attempts} attempts.')
+                if on_complete is not None:
+                    on_complete(success=False, count=created)
+
+        self._network_layer.request_entanglement(alice_id, bob_id, high_fidelity=high_fidelity, on_complete=on_entanglement_done)

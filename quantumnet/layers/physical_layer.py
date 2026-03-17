@@ -36,8 +36,8 @@ class PhysicalLayer:
         """
         self._physical_layer_id = physical_layer_id
         self._context = context
-        self._failed_eprs = []
         self._count_epr = 0
+        self._regen_active = False
         self.logger = Logger.get_instance()
 
 
@@ -58,15 +58,6 @@ class PhysicalLayer:
         """
         return self._physical_layer_id
 
-    @property
-    def failed_eprs(self):
-        """Return the failed EPR pairs.
-
-        Returns:
-            dict: Dictionary of failed EPR pairs.
-        """
-        return self._failed_eprs
-
     def create_qubit(self, host_id: int, increment_qubits: bool = True):
         """Create a qubit and add it to the specified host's memory.
 
@@ -86,6 +77,7 @@ class PhysicalLayer:
         qubit_id = self._context.generate_qubit_id()
         qubit = Qubit(
             qubit_id,
+            initial_fidelity=1.0,
             clock=self._context.clock,
             decoherence_rate=self._context.config.decoherence.per_timeslot
         )
@@ -198,6 +190,46 @@ class PhysicalLayer:
         except (KeyError, ValueError):
             pass  # Channel or EPR already gone
 
+    def start_qubit_regen(self):
+        """Schedule periodic qubit regeneration for all hosts.
+
+        Uses config.defaults.qubit_regen_interval (ticks between cycles) and
+        config.defaults.qubit_regen_amount (qubits created per host per cycle).
+        Does nothing if qubit_regen_interval is 0.
+        """
+        interval = self._context.config.defaults.qubit_regen_interval
+        if interval > 0:
+            self._regen_active = True
+            self._context.clock.schedule(interval, self._do_qubit_regen)
+
+    def stop_qubit_regen(self):
+        """Stop periodic qubit regeneration.
+
+        Already-scheduled callbacks will exit early without creating qubits.
+        """
+        self._regen_active = False
+
+    def _do_qubit_regen(self):
+        """Create new qubits for every host, then reschedule the next cycle."""
+        if not self._regen_active:
+            return
+        amount = self._context.config.defaults.qubit_regen_amount
+        for host_id in self._context.hosts:
+            for _ in range(amount):
+                self.create_qubit(host_id, increment_qubits=False)
+        self._context.clock.emit(
+            'qubits_regenerated',
+            host_count=len(self._context.hosts),
+            amount_per_host=amount,
+        )
+        self.logger.debug(
+            f'Timeslot {self._context.clock.now}: '
+            f'Qubit regeneration — {amount} qubits added to each of '
+            f'{len(self._context.hosts)} hosts.'
+        )
+        interval = self._context.config.defaults.qubit_regen_interval
+        self._context.clock.schedule(interval, self._do_qubit_regen)
+
     def fidelity_measurement_only_one(self, qubit: Qubit):
         """Measure the fidelity of a qubit.
 
@@ -227,20 +259,27 @@ class PhysicalLayer:
         self.logger.log(f'The fidelity between qubit {fidelity1} and qubit {fidelity2} is {combined_fidelity}')
         return combined_fidelity
 
-    def entanglement_creation_heralding_protocol(self, alice: Host, bob: Host, on_complete=None):
+    def entanglement_creation_heralding_protocol(self, alice: Host, bob: Host, high_fidelity: bool = True, on_complete=None):
         """Schedule entanglement creation heralding protocol. Fire-and-forget.
 
         Result communicated via:
           - 'echp_success' or 'echp_low_fidelity' event
           - on_complete(success=True/False) callback if provided
+
+        Args:
+            alice (Host): Alice host.
+            bob (Host): Bob host.
+            high_fidelity (bool): If True, reject EPR pairs below fidelity threshold.
+                If False, accept any EPR pair.
+            on_complete: Optional callback(success=bool, epr_fidelity=float).
         """
         cost = self._context.config.costs.heralding
         self._context.clock.schedule(
             cost, self._do_heralding,
-            alice=alice, bob=bob, on_complete=on_complete
+            alice=alice, bob=bob, high_fidelity=high_fidelity, on_complete=on_complete
         )
 
-    def _do_heralding(self, alice, bob, on_complete=None):
+    def _do_heralding(self, alice, bob, high_fidelity=True, on_complete=None):
         """Execute heralding at the scheduled timeslot."""
         if not alice.memory or not bob.memory:
             self.logger.log(f'Timeslot {self._context.clock.now}: Heralding failed — insufficient qubits (Alice={alice.host_id}, Bob={bob.host_id}).')
@@ -268,11 +307,16 @@ class PhysicalLayer:
             self._context.clock.emit('echp_success', alice=alice_host_id, bob=bob_host_id, fidelity=epr_fidelity)
             self.logger.log(f'Timeslot {self._context.clock.now}: Entanglement creation protocol succeeded with required fidelity.')
             success = True
-        else:
+        elif not high_fidelity:
+            # Accept low-fidelity EPR when high_fidelity is not required
             self.add_epr_to_channel(epr, (alice_host_id, bob_host_id))
-            self._failed_eprs.append(epr)
             self._context.clock.emit('echp_low_fidelity', alice=alice_host_id, bob=bob_host_id, fidelity=epr_fidelity)
-            self.logger.log(f'Timeslot {self._context.clock.now}: Entanglement creation protocol succeeded, but with low fidelity.')
+            self.logger.log(f'Timeslot {self._context.clock.now}: EPR accepted with low fidelity {epr_fidelity:.4f} (high_fidelity=False).')
+            success = True
+        else:
+            # Discard EPR — fidelity too low
+            self._context.clock.emit('echp_low_fidelity', alice=alice_host_id, bob=bob_host_id, fidelity=epr_fidelity)
+            self.logger.log(f'Timeslot {self._context.clock.now}: EPR discarded — fidelity {epr_fidelity:.4f} below threshold.')
             success = False
 
         if on_complete is not None:
