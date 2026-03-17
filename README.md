@@ -1,4 +1,4 @@
-﻿# Título projeto
+﻿# QuantumNet
 
 ## QuantumNet: Um Simulador de Redes Quânticas Baseado em Camadas
 
@@ -68,7 +68,7 @@ Ao final desta seção, a ferramenta estará pronta para execução.
 1. Clone o repositório:
 
 ```bash
-git clone https://github.com/artuenric/QuantumNet.git
+git clone https://github.com/quantumgercom/QuantumNet.git
 cd QuantumNet
 ```
 
@@ -209,11 +209,11 @@ docker compose run --rm quantumnet python3 teste_rapido.py
 
 Esta seção descreve como reproduzir, a partir do artefato disponibilizado, as principais reivindicações associadas ao artigo.
 
-## Reivindicação #1 — Execução da arquitetura em camadas do simulador
+## Reivindicação #1 — Execução de uma aplicação sobre a arquitetura em camadas
 
-Esta reivindicação demonstra que o QuantumNet permite a execução de mecanismos distribuídos em diferentes níveis de uma arquitetura explícita em camadas, conforme a proposta central do artigo.
+Esta reivindicação demonstra que o QuantumNet permite executar uma aplicação de alto nível sobre sua arquitetura em camadas. No cenário apresentado, o protocolo NEPR solicita pares EPR entre dois nós da rede, e o simulador processa essa requisição ao longo da pilha de comunicação, produzindo eventos, métricas e visualizações compatíveis com o comportamento do sistema.
 
-Notebook correspondente: `examples/demo_camadas.ipynb`.
+Notebook correspondente: `examples/demo_nepr.ipynb`.
 
 Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de **Instalação** ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
 
@@ -227,7 +227,7 @@ docker compose up quantumnet-notebook
 # Local
 jupyter notebook
 ```
-2. Abra o notebook ``examples/demo_camadas.ipynb.``
+2. Abra o notebook ``examples/demo_nepr.ipynb.``
 
 3. Execute todas as células em sequência (Run All).
 
@@ -237,7 +237,7 @@ jupyter notebook
 
 Tempo esperado: 1 a 10 minutos, dependendo da topologia e da quantidade de operações executadas.
 Recursos esperados: aproximadamente 1 GB de RAM e baixo uso de disco.
-Resultado esperado: execução bem-sucedida do fluxo demonstrativo do simulador, com geração de logs, métricas e saídas compatíveis com operações em diferentes camadas da pilha de comunicação.
+Resultado esperado: execução bem-sucedida de múltiplas requisições NEPR entre dois nós da topologia, com geração de métricas de sucesso/falha, fidelidade média dos pares distribuídos, eventos de aplicação registrados em CSV e visualizações que evidenciam efeitos da infraestrutura subjacente, como decoerência e regeneração de qubits.
 
 ## Reivindicação #2 — Reprodução do agendamento de purificação na camada de enlace
 
@@ -247,7 +247,7 @@ Notebook correspondente: ``examples/demo_purification.ipynb.``
 
 Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de Instalação ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
 
-Passo a passo para rodar no Jupyter
+### Passo a passo para rodar no Jupyter
 
 1. Inicie o Jupyter:
 ```
@@ -277,9 +277,9 @@ Notebook correspondente: ``examples/demo_attack.ipynb.``
 
 Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de Instalação ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
 
-Passo a passo para rodar no Jupyter
+### Passo a passo para rodar no Jupyter
 
-1 Inicie o Jupyter:
+1. Inicie o Jupyter:
 ```
 # Docker
 docker compose up quantumnet-notebook
