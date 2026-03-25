@@ -35,6 +35,12 @@ def setup_page() -> None:
             color: #1d4ed8 !important;
             border-color: #2563eb !important;
         }
+        div[data-testid="stAppDeployButton"] {
+            display: none;
+        }
+        div[data-testid="stDeployButton"] {
+            display: none;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -62,4 +68,3 @@ def config_selector(default_config_path: Path) -> Path:
     )
     custom_name = normalize_custom_filename(custom_name_input)
     return (default_config_path.parent / custom_name).resolve()
-
