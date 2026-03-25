@@ -1,16 +1,17 @@
 # Configuration
 
-Este documento descreve todos os parametros da configuracao central do QuantumNet (`SimulationConfig`), usados no arquivo `quantumnet/default_config.yaml`.
+Este documento descreve os parametros da configuracao central do QuantumNet (`SimulationConfig`), usados no arquivo `quantumnet/default_config.yaml`.
 
 ## Visao Geral
 
-A configuracao e dividida em 6 seções:
+A configuracao e dividida em 7 secoes:
 
 - `decoherence`
 - `fidelity`
 - `probability`
 - `protocol`
 - `defaults`
+- `topology`
 - `costs`
 
 Se um campo nao existir no YAML, o valor padrao da dataclass em `quantumnet/config.py` e usado automaticamente.
@@ -27,7 +28,7 @@ Se um campo nao existir no YAML, o valor padrao da dataclass em `quantumnet/conf
   - `werner`
   - `bitflip+werner`
 
-## seção `decoherence`
+## secao `decoherence`
 
 | Parametro | Tipo | Padrao | Efeito |
 |---|---|---|---|
@@ -36,7 +37,7 @@ Se um campo nao existir no YAML, o valor padrao da dataclass em `quantumnet/conf
 | `qubit_ttl_threshold` | `float` | `0.1` | Qubit e removido quando fidelidade cai abaixo deste limiar. |
 | `epr_ttl_threshold` | `float` | `0.1` | Par EPR e removido quando fidelidade cai abaixo deste limiar. |
 
-## seção `fidelity`
+## secao `fidelity`
 
 | Parametro | Tipo | Padrao | Efeito |
 |---|---|---|---|
@@ -45,14 +46,14 @@ Se um campo nao existir no YAML, o valor padrao da dataclass em `quantumnet/conf
 | `purification_min_probability` | `float` | `0.5` | Probabilidade minima para tentar purificacao. |
 | `initial_epr_fidelity` | `float` | `1.0` | Fidelidade inicial dos pares EPR recem-criados. |
 
-## seção `probability`
+## secao `probability`
 
 | Parametro | Tipo | Padrao | Efeito |
 |---|---|---|---|
 | `epr_create_max` | `float` | `1.0` | Limite superior da probabilidade de criacao de EPR nos canais. |
 | `epr_create_min` | `float` | `0.2` | Limite inferior da probabilidade de criacao de EPR nos canais. |
 
-## seção `protocol`
+## secao `protocol`
 
 | Parametro | Tipo | Padrao | Efeito |
 |---|---|---|---|
@@ -61,9 +62,7 @@ Se um campo nao existir no YAML, o valor padrao da dataclass em `quantumnet/conf
 | `transport_max_attempts` | `int` | `2` | Numero maximo de tentativas na camada de transporte. |
 | `entanglement_max_attempts` | `int` | `5` | Numero maximo de tentativas para estabelecer emaranhamento. |
 
-Observacao: no `default_config.yaml` atual pode nao existir `entanglement_max_attempts`. Nesse caso, o valor `5` da dataclass e aplicado.
-
-## seção `defaults`
+## secao `defaults`
 
 | Parametro | Tipo | Padrao | Efeito |
 |---|---|---|---|
@@ -73,9 +72,36 @@ Observacao: no `default_config.yaml` atual pode nao existir `entanglement_max_at
 | `qubit_regen_amount` | `int` | `3` | Quantidade de qubits adicionada por host em cada ciclo de regeneracao. |
 | `channel_noise_type` | `str` | `random` | Modelo de ruido no canal: `bit-flip`, `werner`, `bitflip+werner` ou `random`. |
 
-Observacao: no `default_config.yaml` atual pode nao existir `qubit_regen_interval` e `qubit_regen_amount`. Nesses casos, os valores padrao da dataclass sao usados.
+## secao `topology`
 
-## seção `costs`
+Esta secao controla topologias prontas via configuracao.
+
+| Parametro | Tipo | Padrao | Efeito |
+|---|---|---|---|
+| `name` | `str` ou `bool` | `false` | Quando `false`/`null`, desativa topologia pronta por config. Quando definido, seleciona a topologia (`Line`, `Grid`, `Star`, `Ring` ou `Json`). |
+| `args` | `list` | `[]` | Argumentos da topologia escolhida. |
+
+Regras de `args`:
+
+- `Line`, `Star` e `Ring`: `args` com 1 inteiro (`num_hosts`).
+- `Grid`: `args` com 2 inteiros (`rows`, `cols`).
+- `Json`: `args` com 1 valor (caminho de arquivo JSON ou objeto inline).
+
+Fluxo recomendado para topologia pronta:
+
+```yaml
+topology:
+  name: Line
+  args: [5]
+```
+
+```python
+net.set_ready_topology()  # usa somente config.topology
+```
+
+`set_ready_topology` nao aceita mais nome/args no script.
+
+## secao `costs`
 
 | Parametro | Tipo | Padrao | Efeito |
 |---|---|---|---|
@@ -87,5 +113,3 @@ Observacao: no `default_config.yaml` atual pode nao existir `qubit_regen_interva
 | `qubit_creation` | `int` | `1` | Custo em timeslots para criar qubits. |
 | `e91_round` | `int` | `1` | Custo em timeslots por rodada E91. |
 | `nepr_measurement` | `int` | `1` | Custo em timeslots da medicao no fluxo NEPR. |
-
-Observacao: no `default_config.yaml` atual pode nao existir `nepr_measurement`. Nesse caso, o valor padrao `1` e aplicado.
