@@ -11,6 +11,7 @@ from quantumnet.gui.pages.version import render_version_page
 
 
 def _render_sidebar_brand() -> None:
+    github_url = "https://github.com/quantumgercom/QuantumNet"
     logo_path = (Path(__file__).resolve().parents[1] / "img" / "logoquantumnet.png").resolve()
     logo_base64 = base64.b64encode(logo_path.read_bytes()).decode("utf-8")
 
@@ -19,8 +20,24 @@ def _render_sidebar_brand() -> None:
             f"""
             <div class="qn-sidebar-brand-wrap" style="margin:0;padding:20px 0 0 0;">
                 <div class="qn-sidebar-brand-row" style="margin:0 0 20px 0;padding:0 2rem 0 0;">
-                    <img src="data:image/png;base64,{logo_base64}" alt="QuantumNet logo" width="40" height="40" />
-                    <span>QuantumNet</span>
+                    <a
+                        href="{github_url}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="qn-sidebar-brand-link qn-sidebar-brand-logo-link"
+                        aria-label="QuantumNet GitHub repository"
+                    >
+                        <img src="data:image/png;base64,{logo_base64}" alt="QuantumNet logo" width="40" height="40" />
+                    </a>
+                    <a
+                        href="{github_url}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="qn-sidebar-brand-link qn-sidebar-brand-name-link"
+                        aria-label="QuantumNet GitHub repository"
+                    >
+                        QuantumNet
+                    </a>
                 </div>
                 <div class="qn-sidebar-divider" style="margin:0 0 20px 0;"></div>
             </div>

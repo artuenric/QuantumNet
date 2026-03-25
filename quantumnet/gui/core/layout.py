@@ -115,6 +115,23 @@ def setup_page() -> None:
             font-weight: 700;
             line-height: 1.2;
         }
+        section[data-testid="stSidebar"] .qn-sidebar-brand-link {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        section[data-testid="stSidebar"] .qn-sidebar-brand-logo-link {
+            display: inline-flex;
+            align-items: center;
+            line-height: 0;
+        }
+        section[data-testid="stSidebar"] .qn-sidebar-brand-name-link {
+            font-size: var(--qn-brand-font-size);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        section[data-testid="stSidebar"] .qn-sidebar-brand-link:hover {
+            opacity: 0.85;
+        }
         section[data-testid="stSidebar"] .qn-sidebar-divider {
             border-bottom: 1px solid rgba(128, 128, 128, 0.35);
             margin: 0 0 var(--qn-sidebar-gap) 0 !important;
