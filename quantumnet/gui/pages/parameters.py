@@ -13,6 +13,7 @@ from quantumnet.gui.parameters.sections import (
     render_fidelity_section,
     render_probability_section,
     render_protocol_section,
+    render_topology_section,
 )
 from quantumnet.gui.parameters.validation import validate_config
 
@@ -41,19 +42,24 @@ def render_parameters_page(default_config_path: Path) -> None:
         protocol = render_protocol_section(current)
         defaults = render_defaults_section(current)
         costs = render_costs_section(current)
+        topology = render_topology_section(current)
         submitted = st.form_submit_button("Save configuration")
 
     if not submitted:
         return
 
-    new_values = {
-        "decoherence": decoherence,
-        "fidelity": fidelity,
-        "probability": probability,
-        "protocol": protocol,
-        "defaults": defaults,
-        "costs": costs,
-    }
+    new_values = dict(current)
+    new_values.update(
+        {
+            "decoherence": decoherence,
+            "fidelity": fidelity,
+            "probability": probability,
+            "protocol": protocol,
+            "defaults": defaults,
+            "costs": costs,
+            "topology": topology,
+        }
+    )
     errors = validate_config(new_values)
     if errors:
         st.error("Could not save: there are invalid values.")
