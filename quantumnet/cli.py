@@ -16,7 +16,7 @@ def _build_parser() -> argparse.ArgumentParser:
     gui.add_argument("--port", type=int, default=8501, help="Port for Streamlit server")
     gui.add_argument(
         "--config-path",
-        default=str(Path(__file__).resolve().parent / "default_config.yaml"),
+        default=str(Path(__file__).resolve().parent / "config" / "default_config.yaml"),
         help="Path for the YAML config edited by the GUI",
     )
 
@@ -25,8 +25,15 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _run_gui(args: argparse.Namespace) -> int:
     app_path = Path(__file__).resolve().parent / "gui" / "app.py"
+    package_root = Path(__file__).resolve().parent
+    legacy_default = (package_root / "default_config.yaml").resolve()
+    new_default = (package_root / "config" / "default_config.yaml").resolve()
+    selected_config = Path(args.config_path).resolve()
+    if selected_config == legacy_default:
+        selected_config = new_default
+
     env = os.environ.copy()
-    env["QUANTUMNET_CONFIG_PATH"] = str(Path(args.config_path).resolve())
+    env["QUANTUMNET_CONFIG_PATH"] = str(selected_config)
 
     cmd = [
         sys.executable,
@@ -54,4 +61,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
