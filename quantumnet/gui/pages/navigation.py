@@ -8,10 +8,10 @@ import streamlit as st
 
 from quantumnet.gui.pages.parameters import render_parameters_page
 from quantumnet.gui.pages.version import render_version_page
+from quantumnet.metadata import REPOSITORY_URL
 
 
 def _render_sidebar_brand() -> None:
-    github_url = "https://github.com/quantumgercom/QuantumNet"
     logo_path = (Path(__file__).resolve().parents[1] / "img" / "logoquantumnet.png").resolve()
     logo_base64 = base64.b64encode(logo_path.read_bytes()).decode("utf-8")
 
@@ -21,7 +21,7 @@ def _render_sidebar_brand() -> None:
             <div class="qn-sidebar-brand-wrap" style="margin:0;padding:20px 0 0 0;">
                 <div class="qn-sidebar-brand-row" style="margin:0 0 20px 0;padding:0 2rem 0 0;">
                     <a
-                        href="{github_url}"
+                        href="{REPOSITORY_URL}"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="qn-sidebar-brand-link qn-sidebar-brand-logo-link"
@@ -30,7 +30,7 @@ def _render_sidebar_brand() -> None:
                         <img src="data:image/png;base64,{logo_base64}" alt="QuantumNet logo" width="40" height="40" />
                     </a>
                     <a
-                        href="{github_url}"
+                        href="{REPOSITORY_URL}"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="qn-sidebar-brand-link qn-sidebar-brand-name-link"
@@ -51,7 +51,7 @@ def build_navigation(config_path: Path) -> Any:
         render_parameters_page(config_path)
 
     def _version_page() -> None:
-        render_version_page(config_path)
+        render_version_page()
 
     _render_sidebar_brand()
 
