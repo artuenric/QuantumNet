@@ -1,4 +1,4 @@
-﻿# QuantumNet
+# QuantumNet
 
 ## QuantumNet: Um Simulador de Redes Quânticas Baseado em Camadas
 
@@ -194,7 +194,9 @@ from quantumnet.topology import Network
 # Cria o relógio e a rede com topologia em linha de 3 nós
 clock = Clock()
 net = Network(clock=clock)
-net.set_ready_topology('Line', 3)
+net.config.topology.name = 'Line'
+net.config.topology.args = [3]
+net.set_ready_topology()
 
 # Verifica se a topologia foi criada
 assert len(list(net.nodes)) == 3, "Deveria haver 3 nós"
