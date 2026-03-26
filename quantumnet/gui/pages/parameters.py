@@ -42,7 +42,7 @@ def render_parameters_page(default_config_path: Path) -> None:
     defaults = render_defaults_section(current)
     costs = render_costs_section(current)
     topology = render_topology_section(current)
-    submitted = st.button("Save configuration")
+    submitted = st.button("Save configuration", type="primary")
 
     if not submitted:
         return

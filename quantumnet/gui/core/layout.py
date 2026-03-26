@@ -151,17 +151,35 @@ def setup_page() -> None:
         div[data-testid="stForm"] * {
             text-align: left !important;
         }
-        button[kind="primary"] {
+        button[kind="secondary"] {
             background-color: #2563eb !important;
             border-color: #2563eb !important;
+            color: #ffffff !important;
         }
-        button[kind="primary"]:hover {
+        button[kind="secondary"]:hover {
             background-color: #1d4ed8 !important;
             border-color: #1d4ed8 !important;
+            color: #ffffff !important;
         }
-        button[kind="secondary"] {
-            color: #1d4ed8 !important;
-            border-color: #2563eb !important;
+        button[kind="secondary"]:active {
+            background-color: #1e40af !important;
+            border-color: #1e40af !important;
+            color: #ffffff !important;
+        }
+        button[kind="primary"] {
+            background-color: #16a34a !important;
+            border-color: #16a34a !important;
+            color: #ffffff !important;
+        }
+        button[kind="primary"]:hover {
+            background-color: #15803d !important;
+            border-color: #15803d !important;
+            color: #ffffff !important;
+        }
+        button[kind="primary"]:active {
+            background-color: #166534 !important;
+            border-color: #166534 !important;
+            color: #ffffff !important;
         }
         div[data-testid="stAppDeployButton"] {
             display: none;
