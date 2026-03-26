@@ -47,7 +47,7 @@ def _canvas_key(topology_path: Path) -> str:
 
 
 def _canvas_frame_key(topology_path: Path) -> str:
-    return f"qn_topology_flow_frame_{_editor_id(topology_path)}"
+    return f"qn_topology_flow_frame_v3_{_editor_id(topology_path)}"
 
 
 def _pending_source_key(topology_path: Path) -> str:
@@ -63,18 +63,11 @@ def _inject_canvas_frame_style(frame_key: str) -> None:
         f"""
         <style>
         .st-key-{frame_key} {{
-            border: 2px solid #000000 !important;
+            color: inherit !important;
+            border: 2px solid currentColor !important;
             border-radius: 8px !important;
             overflow: hidden;
             padding: 0 !important;
-        }}
-        html[data-theme="light"] .st-key-{frame_key},
-        body[data-theme="light"] .st-key-{frame_key} {{
-            border-color: #000000 !important;
-        }}
-        html[data-theme="dark"] .st-key-{frame_key},
-        body[data-theme="dark"] .st-key-{frame_key} {{
-            border-color: #ffffff !important;
         }}
         </style>
         """,
