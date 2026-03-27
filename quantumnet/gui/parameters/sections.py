@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -21,6 +22,29 @@ def _topology_disabled(name: Any) -> bool:
         return not name
     normalized = _normalized_topology_name(name)
     return normalized in {"", "false", "none", "null", "off", "0"}
+
+
+def _active_config_dir() -> Path:
+    raw_path = st.session_state.get("qn_active_config_path")
+    if isinstance(raw_path, str) and raw_path.strip():
+        try:
+            return Path(raw_path).resolve().parent
+        except (OSError, RuntimeError, ValueError):
+            pass
+    return Path.cwd()
+
+
+def _resolve_topology_json_path(raw_path: str) -> Path | None:
+    clean_path = str(raw_path).strip()
+    if not clean_path:
+        return None
+    try:
+        topology_path = Path(clean_path)
+        if not topology_path.is_absolute():
+            topology_path = _active_config_dir() / topology_path
+        return topology_path.resolve()
+    except (OSError, RuntimeError, ValueError):
+        return None
 
 
 def render_decoherence_section(current: dict[str, Any]) -> dict[str, float]:
@@ -349,7 +373,13 @@ def render_topology_section(current: dict[str, Any]) -> dict[str, Any]:
             value=default_filename,
             help="Exact file name or relative path to your custom topology JSON file.",
         )
-        args = [json_filename.strip()]
+        json_filename = json_filename.strip()
+        args = [json_filename]
+
+        if json_filename:
+            topology_json_path = _resolve_topology_json_path(json_filename)
+            if topology_json_path is None or not topology_json_path.is_file():
+                col1.error("Arquivo JSON de topologia nao foi encontrado.")
     else:
         args = []
 

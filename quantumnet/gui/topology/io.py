@@ -42,7 +42,10 @@ def topology_file_selector(default_path: Path) -> Path:
         help="File saved in the same folder as default_config.yaml.",
     )
     custom_name = normalize_topology_filename(custom_name_input)
-    return (default_path.parent / custom_name).resolve()
+    topology_path = (default_path.parent / custom_name).resolve()
+    if not topology_path.is_file():
+        st.error("Arquivo JSON de topologia nao foi encontrado.")
+    return topology_path
 
 
 def load_topology_json(path: Path) -> Any:
