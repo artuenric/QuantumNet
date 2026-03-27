@@ -81,9 +81,10 @@ class JsonTopology(BaseTopology):
     """Topology loaded from a JSON file or inline JSON-like object.
 
     Supported formats:
-      1) {"hosts": [{"name": "A", "connections": ["B"]}, ...]}
-      2) [{"name": "A", "connections": ["B"]}, ...]
-      3) {"A": ["B", "C"], "B": ["A"], ...}
+      1) {"hosts": [{"id": "n1", "name": "Alice", "connections": ["n2"]}, ...]}
+      2) {"hosts": [{"name": "A", "connections": ["B"]}, ...]}
+      3) [{"name": "A", "connections": ["B"]}, ...]
+      4) {"A": ["B", "C"], "B": ["A"], ...}
     """
 
     def __init__(self, source: Any, base_dir: str | Path | None = None) -> None:
@@ -140,27 +141,41 @@ class JsonTopology(BaseTopology):
         hosts = self._extract_hosts(spec)
 
         graph = nx.Graph()
-        declared: set[str] = set()
+        declared_ids: set[str] = set()
+        declared_names: set[str] = set()
+        name_to_id: dict[str, str] = {}
+        parsed_hosts: list[tuple[str, str, list[str]]] = []
 
         for index, host in enumerate(hosts):
             if not isinstance(host, dict):
                 raise TopologyError(
                     f"Invalid host entry at index {index}: expected object."
                 )
-            if "name" not in host:
-                raise TopologyError(f"Host entry at index {index} is missing 'name'.")
+            if "id" in host:
+                host_id = str(host["id"]).strip()
+                if not host_id:
+                    raise TopologyError(f"Host entry at index {index} has an empty id.")
+            elif "name" in host:
+                host_id = str(host["name"]).strip()
+                if not host_id:
+                    raise TopologyError(f"Host entry at index {index} has an empty name.")
+            else:
+                raise TopologyError(
+                    f"Host entry at index {index} must define 'id' or 'name'."
+                )
 
-            host_name = str(host["name"]).strip()
+            if host_id in declared_ids:
+                raise TopologyError(f"Duplicate host id in JSON topology: {host_id!r}")
+            declared_ids.add(host_id)
+
+            host_name = str(host.get("name", host_id)).strip()
             if not host_name:
                 raise TopologyError(f"Host entry at index {index} has an empty name.")
-            if host_name in declared:
+            if host_name in declared_names:
                 raise TopologyError(f"Duplicate host name in JSON topology: {host_name!r}")
+            declared_names.add(host_name)
+            name_to_id[host_name] = host_id
 
-            declared.add(host_name)
-            graph.add_node(host_name)
-
-        for host in hosts:
-            host_name = str(host["name"]).strip()
             connections = host.get("connections", [])
             if connections is None:
                 connections = []
@@ -168,14 +183,25 @@ class JsonTopology(BaseTopology):
                 raise TopologyError(
                     f"Host {host_name!r} has invalid 'connections'. Expected a list."
                 )
+            parsed_hosts.append((host_id, host_name, [str(target).strip() for target in connections]))
+            graph.add_node(host_id, label=host_name)
 
+        for host_id, host_name, connections in parsed_hosts:
             for target in connections:
-                target_name = str(target).strip()
-                if target_name not in declared:
+                if not target:
                     raise TopologyError(
-                        f"Host {host_name!r} references unknown connection {target_name!r}."
+                        f"Host {host_name!r} has an empty connection reference."
                     )
-                graph.add_edge(host_name, target_name)
+
+                # Prefer direct host id references; fallback to unique host name.
+                resolved_target = target
+                if resolved_target not in declared_ids:
+                    resolved_target = name_to_id.get(target, "")
+                if not resolved_target:
+                    raise TopologyError(
+                        f"Host {host_name!r} references unknown connection {target!r}."
+                    )
+                graph.add_edge(host_id, resolved_target)
 
         return graph
 

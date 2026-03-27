@@ -195,7 +195,7 @@ class Network():
         return Host(self.generate_host_id(), name=name)
 
     def resolve_host_id(self, host_ref: int | str) -> int:
-        """Resolve host references by integer ID or host name."""
+        """Resolve host references by integer ID, host name, or explicit ``id:<int>``."""
         if isinstance(host_ref, int):
             if host_ref not in self._hosts:
                 raise TopologyError(f"Host ID {host_ref} does not exist in network.")
@@ -209,11 +209,16 @@ class Network():
             if normalized in self._host_name_to_id:
                 return self._host_name_to_id[normalized]
 
-            # Backward-friendly: allow numeric strings as IDs.
-            if normalized.lstrip("-").isdigit():
-                host_id = int(normalized)
+            if normalized.lower().startswith("id:"):
+                raw_id = normalized[3:].strip()
+                if not raw_id or not raw_id.lstrip("-").isdigit():
+                    raise TopologyError(
+                        f"Invalid host ID reference '{host_ref}'. Use 'id:<integer>'."
+                    )
+                host_id = int(raw_id)
                 if host_id in self._hosts:
                     return host_id
+                raise TopologyError(f"Host ID {host_id} does not exist in network.")
 
             raise TopologyError(f"Host name '{host_ref}' does not exist in network.")
 
@@ -346,7 +351,7 @@ class Network():
             graph,
             first_label=0,
             ordering="default",
-            label_attribute="label",
+            label_attribute="_original_node",
         )
         self._graph.clear()
         self._graph.update(normalized_graph)
@@ -357,7 +362,10 @@ class Network():
         self._clear_host_indexes()
         for node in self._graph.nodes():
             host_id = int(node)
-            host_name = str(self._graph.nodes[node].get("label", host_id))
+            raw_name = self._graph.nodes[node].get("label")
+            if raw_name is None:
+                raw_name = self._graph.nodes[node].get("_original_node", host_id)
+            host_name = str(raw_name)
             host = Host(host_id, name=host_name)
             for neighbor in self._graph.neighbors(node):
                 host.add_connection(int(neighbor))
