@@ -533,8 +533,9 @@ def _handle_canvas_interaction(topology_path: Path) -> None:
         selected_edge_state = None
         st.session_state[selected_edge_state_key] = None
 
+    previous_processed_timestamp = st.session_state.get(processed_ts_key)
     event_timestamp = int(getattr(state, "timestamp", 0) or 0)
-    if event_timestamp == st.session_state.get(processed_ts_key):
+    if event_timestamp == previous_processed_timestamp:
         _apply_pending_source_style(state, selected_node_state)
         _apply_selected_edge_style(state, selected_edge_state)
         return
@@ -766,34 +767,42 @@ def render_topology_editor(topology_path: Path) -> None:
             )
             current_connections = _node_connections(current_state, selected_node)
             current_connections_set = set(current_connections)
-            new_node_id = st.text_input(
-                "Node ID",
-                value=selected_node,
-                help="Rename the selected node.",
-            )
-            kept_connections = st.multiselect(
-                "Current connections",
-                options=current_connections,
-                default=current_connections,
-                help="Keep checked connections. Uncheck to remove.",
-            )
             add_connection_candidates = [
                 node_id
                 for node_id in sorted_node_ids
                 if node_id != selected_node and node_id not in current_connections_set
             ]
             new_connection_placeholder = "(none)"
-            new_connection_target = st.selectbox(
-                "Add new connection",
-                options=[new_connection_placeholder, *add_connection_candidates],
-                help="Only nodes not already connected are listed.",
-            )
-            delete_on_apply = st.checkbox(
-                "Delete this node on apply",
-                value=False,
-                help="If checked, this node and all its connections will be removed.",
-            )
-            if st.button("Apply changes", type="primary", use_container_width=True):
+            form_key = f"qn_topology_node_actions_{_editor_id(topology_path)}_{selected_node}"
+            with st.form(key=form_key):
+                new_node_id = st.text_input(
+                    "Node ID",
+                    value=selected_node,
+                    help="Rename the selected node.",
+                )
+                kept_connections = st.multiselect(
+                    "Current connections",
+                    options=current_connections,
+                    default=current_connections,
+                    help="Keep checked connections. Uncheck to remove.",
+                )
+                new_connection_target = st.selectbox(
+                    "Add new connection",
+                    options=[new_connection_placeholder, *add_connection_candidates],
+                    help="Only nodes not already connected are listed.",
+                )
+                delete_on_apply = st.checkbox(
+                    "Delete this node on apply",
+                    value=False,
+                    help="If checked, this node and all its connections will be removed.",
+                )
+                apply_changes = st.form_submit_button(
+                    "Apply changes",
+                    type="primary",
+                    use_container_width=True,
+                )
+
+            if apply_changes:
                 desired_node_id = new_node_id.strip()
                 existing_node_ids = _node_ids(current_state)
                 if delete_on_apply:
