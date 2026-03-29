@@ -1,13 +1,10 @@
 # QuantumNet
 
-## QuantumNet: Um Simulador de Redes Quânticas Baseado em Camadas
+## QuantumNet: Um Simulador de Redes Quânticas Baseado em uma Arquitetura em Camadas com Interface Gráfica
 
-As redes quânticas são fundamentais para a futura Internet Quântica, mas sua implementação prática ainda enfrenta restrições físicas e operacionais que dificultam a avaliação de protocolos em ambientes reais. Nesse contexto, simuladores tornam-se ferramentas essenciais para investigar arquiteturas, mecanismos de comunicação e aplicações de forma controlada e reprodutível.
+As redes quânticas são fundamentais para a futura Internet Quântica, porém sua implementação prática ainda enfrenta restrições físicas e operacionais que dificultam a avaliação de protocolos em ambientes reais. Nesse contexto, simuladores tornam-se ferramentas essenciais para investigar arquiteturas, mecanismos de comunicação e aplicações de forma controlada e reprodutível. Este trabalho apresenta o **QuantumNet**, um simulador de redes quânticas de código aberto baseado em simulação de eventos discretos. A ferramenta adota uma arquitetura em camadas explícita, inspirada em modelos clássicos de redes e alinhada aos princípios arquiteturais e às RFCs emergentes da Internet Quântica, permitindo uma representação estruturada e orientada a padrões dos processos de comunicação. Esse alinhamento constitui um diferencial importante, ao promover interoperabilidade, reprodutibilidade e aderência aos esforços de padronização em andamento. Além disso, o **QuantumNet** oferece uma interface gráfica que facilita a configuração de parâmetros, a construção de topologias de rede e a visualização dos artefatos da simulação, tornando a ferramenta mais acessível tanto para pesquisa quanto para fins educacionais
 
-Este artefato apresenta o **QuantumNet**, um simulador de redes quânticas de código aberto orientado a eventos discretos. A ferramenta adota uma arquitetura explícita em camadas inspirada em modelos clássicos de rede, oferecendo um ambiente flexível para desenvolvimento, customização e avaliação de protocolos e algoritmos em diferentes níveis da pilha de comunicação.
-
-# Estrutura do readme.md
-
+# Estrutura do README.md
 Este README está organizado da seguinte forma:
 
 1. Título do projeto e resumo do artigo/artefato.
@@ -15,11 +12,12 @@ Este README está organizado da seguinte forma:
 3. Informações básicas do ambiente e requisitos.
 4. Dependências e recursos de terceiros.
 5. Preocupações com segurança.
-6. Instalação (Docker e local).
+6. Instalação (Docker e local, com ou sem Jupyter).
 7. Interface gráfica de configuração.
 8. Teste mínimo de funcionamento.
 9. Experimentos para reprodução das reivindicações.
-10. Licença.
+10. Organização do repositório.
+11. Licença.
 
 # Selos Considerados
 
@@ -55,7 +53,7 @@ Cuidados recomendados:
 
 # Instalação
 
-Ao final desta seção, a ferramenta estará pronta para execução.
+Ao final desta seção, a ferramenta estará pronta para execução em ambiente local ou com Docker, tanto por scripts Python quanto por notebooks Jupyter. A interface gráfica via Streamlit também estará disponível para configuração e inspeção da topologia.
 
 ## Execução com Docker
 
@@ -185,7 +183,7 @@ http://localhost:8501
 
 # Teste mínimo
 
-Esta seção apresenta um passo a passo para validar a instalação e execução básica.
+Esta seção apresenta um passo a passo para validar a instalação e execução básica. Você pode utilizá-la em qualquer cenário de instalação.
 
 ```python
 from quantumnet.runtime import Clock
@@ -252,7 +250,7 @@ docker compose up quantumnet-notebook
 # Local
 jupyter notebook
 ```
-2. Abra o notebook ``examples/demo_nepr.ipynb.``
+2. Abra o notebook `examples/demo_nepr.ipynb`.
 
 3. Execute todas as células em sequência (Run All).
 
@@ -268,21 +266,21 @@ Resultado esperado: execução bem-sucedida de múltiplas requisições NEPR ent
 
 Esta reivindicação demonstra que o artefato permite reproduzir um cenário de purificação em canal ruidoso, evidenciando o comportamento do agendamento híbrido e seu efeito sobre a continuidade do processo e a fidelidade final do enlace.
 
-Notebook correspondente: ``examples/demo_purification.ipynb.``
+Notebook correspondente: `examples/demo_purification.ipynb`.
 
 Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de Instalação ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
 
 ### Passo a passo para rodar no Jupyter
 
 1. Inicie o Jupyter:
-```
+```bash
 # Docker
 docker compose up quantumnet-notebook
 
 # Local
 jupyter notebook
 ```
-2. Abra o notebook ``examples/demo_purification.ipynb.``
+2. Abra o notebook `examples/demo_purification.ipynb`.
 
 3. Execute todas as células em sequência (Run All).
 
@@ -298,21 +296,21 @@ Resultado esperado: saída textual detalhando o processo de purificação, inclu
 
 Esta reivindicação demonstra que o artefato permite reproduzir um cenário de ataque do tipo black hole repeater, evidenciando o impacto de um repetidor malicioso sobre a taxa de sucesso da comunicação quântica.
 
-Notebook correspondente: ``examples/demo_attack.ipynb.``
+Notebook correspondente: `examples/demo_attack.ipynb`.
 
 Considerando o ambiente do projeto previamente configurado, seja via Docker conforme descrito na seção de Instalação ou por instalação local das dependências, a reprodução deste caso de uso consiste na abertura do notebook Jupyter correspondente e na execução sequencial de todas as suas células.
 
 ### Passo a passo para rodar no Jupyter
 
 1. Inicie o Jupyter:
-```
+```bash
 # Docker
 docker compose up quantumnet-notebook
 
 # Local
 jupyter notebook
 ```
-2. Abra o notebook ``examples/demo_attack.ipynb.``
+2. Abra o notebook `examples/demo_attack.ipynb`.
 
 3. Execute todas as células em sequência (Run All).
 
@@ -324,7 +322,47 @@ Tempo esperado: 5 a 20 minutos, conforme os parâmetros do cenário.
 Recursos esperados: 1 a 2 GB de RAM e baixo uso de disco para saídas do experimento.
 Resultado esperado: geração de visualizações comparativas mostrando a diferença entre a rede íntegra e a rede com repetidor malicioso, bem como a degradação da taxa de sucesso à medida que aumenta a intensidade do ataque.
 
+## Reivindicação #4 — Uso da interface gráfica para configuração e validação da topologia padrão
 
-# LICENSE
+Esta reivindicação demonstra que o QuantumNet permite configurar parâmetros e topologia pela interface gráfica e, em seguida, validar essa configuração com um exemplo reproduzível.
+
+Notebook correspondente: `examples/demo_default_topology.ipynb`.
+
+### Passo a passo para reproduzir
+
+1. Inicie a interface gráfica:
+```bash
+# Local
+python -m quantumnet gui
+
+# Docker
+docker compose run --rm --service-ports quantumnet python -m quantumnet gui --host 0.0.0.0 --port 8501
+```
+2. Abra no navegador o endereço exibido no terminal (por padrão, `http://localhost:8501`).
+
+3. Ajuste os parâmetros desejados na sidebar e salve a configuração.
+
+4. Inicie o Jupyter e execute o notebook de validação:
+```bash
+# Docker
+docker compose up quantumnet-notebook
+
+# Local
+jupyter notebook
+```
+5. Abra `examples/demo_default_topology.ipynb` e execute todas as células em sequência (Run All).
+
+Tempo esperado: 1 a 10 minutos.
+Recursos esperados: aproximadamente 1 GB de RAM e baixo uso de disco.
+Resultado esperado: carregamento bem-sucedido dos arquivos padrão de configuração (`default_config.yaml`) e topologia (`default_topology.json`), com criação da rede sem erros e confirmação dos parâmetros aplicados.
+
+# Organização do repositório
+
+- `docs/`: documentação técnica dos módulos principais (camadas, configuração, relógio, controle e topologia).
+- `examples/`: notebooks de demonstração e reprodução dos experimentos descritos neste README.
+- `quantumnet/`: código-fonte principal do simulador (runtime, camadas, topologia, GUI, controle e configurações padrão).
+- Arquivos na raiz: infraestrutura e suporte de execução (`Dockerfile`, `docker-compose.yml`, `requirements*.txt`, `LICENSE` e este `README.md`).
+
+# Licença
 
 Este projeto está licenciado sob os termos descritos no arquivo `LICENSE` do repositório.
